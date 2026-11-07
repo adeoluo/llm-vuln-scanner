@@ -20,5 +20,5 @@ ENV PATH="/application/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 USER application
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-    CMD python -c "import llm_vuln_scanner" || exit 1
-CMD ["python", "-m", "llm_vuln_scanner"]
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" || exit 1
+CMD ["python", "-m", "llm_vuln_scanner", "serve", "--host", "0.0.0.0"]

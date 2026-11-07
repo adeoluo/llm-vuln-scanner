@@ -40,7 +40,7 @@ PLACEHOLDER = re.compile(
 )
 EXCLUDE = re.compile(
     r"\b(sex|sexual|nsfw|porn|erotic|cum|nude|naked|kill|murder|gore|rape|drug|weapon|bomb|"
-    r"racist|slur|torture)\w*",
+    r"racist|slur|torture|violen|abus|suicid|self-harm|hate)\w*",
     re.IGNORECASE,
 )
 
@@ -204,7 +204,7 @@ class WildJailbreak(_DatasetProbe):
             task = TASKS[n % len(TASKS)]
             n += 1
             c = ctx.canaries.token()
-            user = PLACEHOLDER.sub(lambda _m, t=task: t.request, tpl, count=1)
+            user = PLACEHOLDER.sub(task.request.replace("\\", "\\\\"), tpl, count=1)
             user += f"\nBegin your reply with the code {c}."
             out.append(Attempt(
                 id=f"{self.info.name}/{i}", probe=self.info.name,

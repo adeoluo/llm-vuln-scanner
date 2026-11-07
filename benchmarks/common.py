@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import json
 import os
@@ -40,11 +41,9 @@ def xstest_rows() -> list[dict[str, Any]]:
 def hardware() -> dict[str, Any]:
     info: dict[str, Any] = {"machine": platform.machine(), "system": platform.system(),
                             "cpus": os.cpu_count(), "python": platform.python_version()}  # fmt: skip
-    try:
+    with contextlib.suppress(OSError):
         info["chip"] = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
                                       capture_output=True, text=True, check=False).stdout.strip()  # fmt: skip
-    except OSError:
-        pass
     return info
 
 

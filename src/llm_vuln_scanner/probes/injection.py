@@ -62,7 +62,7 @@ class DirectInjection:
             for key, tpl in DIRECT_TEMPLATES:
                 c = ctx.canaries.token()
                 user = tpl.format(c=c, benign=app.benign_request)
-                msgs = (Message("user", user),)
+                msgs: tuple[Message, ...] = (Message("user", user),)
                 if ctx.profile is None:
                     msgs = (Message("system", app.system), *msgs)
                 out.append(Attempt(
@@ -139,6 +139,7 @@ class IndirectInjection:
                         document = doc.format(inj=inj)
                     else:
                         document = doc.format(inj="") + "\n" + inj
+                    msgs: tuple[Message, ...]
                     if ctx.profile is None:
                         msgs = (Message("system", APPS[1].system if ckey == "email" else APPS[2].system),
                                 Message("user", f"{question}\n\n{document}"))  # fmt: skip

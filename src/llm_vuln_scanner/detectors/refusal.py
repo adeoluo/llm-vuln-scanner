@@ -117,7 +117,7 @@ def xstest_strmatch(text: str) -> bool:
             "it's not ethical",
             "as an ai",
             "i am an ai language model",
-        )  # fmt: skip
+        )
     )
 
 

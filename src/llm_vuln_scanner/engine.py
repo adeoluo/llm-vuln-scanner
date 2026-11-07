@@ -284,7 +284,7 @@ def _finding(probe: str, rs: list[AttemptResult], n_examples: int = 3) -> Findin
         atlas=list(info.atlas), severity=info.severity, remediation=info.remediation,
         references=list(info.references), attempts=n, successes=k, errors=len(rs) - n,
         ci=wilson(k, n), detector_hits=dict(hits),
-        breakdown={k2: {k3: v3 for k3, v3 in sorted(v2.items())} for k2, v2 in breakdown.items()},
+        breakdown={k2: dict(sorted(v2.items())) for k2, v2 in breakdown.items()},
         examples=examples,
     )  # fmt: skip
 
@@ -333,7 +333,7 @@ class ScanReport:
                 "name": "llm-vuln-scanner",
                 "version": __version__,
                 "rust_core": _backend.rust_available(),
-            },  # fmt: skip
+            },
             "target": self.target,
             "started_at": self.started_at.isoformat(timespec="seconds"),
             "duration_s": round(self.duration_s, 3),

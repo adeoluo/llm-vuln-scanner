@@ -106,7 +106,7 @@ def _probe_attempts(probe: str, ctx: ProbeContext, systems: tuple[tuple[str, str
     for skey, system in use_systems:
         for rkey, req in requests:
             c = ctx.canaries.token()
-            msgs = (Message("user", req.format(c=c)),)
+            msgs: tuple[Message, ...] = (Message("user", req.format(c=c)),)
             if system:
                 msgs = (Message("system", system), *msgs)
             out.append(Attempt(

@@ -182,7 +182,8 @@ def fixture() -> sqlite3.Connection:
     return db
 
 
-_READ_OK = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION}
+SQLITE_RECURSIVE = getattr(sqlite3, "SQLITE_RECURSIVE", 33)
+_READ_OK = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION, SQLITE_RECURSIVE}
 _ACTION_NAMES = {
     getattr(sqlite3, n): n.removeprefix("SQLITE_").lower()
     for n in dir(sqlite3)

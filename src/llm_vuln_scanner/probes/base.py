@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -35,6 +36,28 @@ class AppProfile:
     shell_allow: str = "ping"
     tools: tuple[ToolSpec, ...] = ()
     forbidden_tools: tuple[str, ...] = ()
+
+
+def load_profile(path: str | Path) -> AppProfile:
+    """Read an application profile from JSON (see ``examples/demo-app.json``)."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("name"), str):
+        raise ValueError("profile must be a JSON object with a 'name'")
+    tools = tuple(
+        ToolSpec(t["name"], t.get("description", ""), tuple(t.get("parameters", ())),
+                 bool(t.get("high_impact", False)))
+        for t in data.get("tools", [])
+    )  # fmt: skip
+    return AppProfile(
+        name=data["name"],
+        secrets=tuple(data.get("secrets", ())),
+        system_prompt=str(data.get("system_prompt", "")),
+        features=tuple(data.get("features", ("chat",))),
+        allowed_hosts=tuple(data.get("allowed_hosts", ())),
+        shell_allow=str(data.get("shell_allow", "ping")),
+        tools=tools,
+        forbidden_tools=tuple(data.get("forbidden_tools", ())),
+    )
 
 
 @dataclass

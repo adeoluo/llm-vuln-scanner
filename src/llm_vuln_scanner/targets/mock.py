@@ -99,7 +99,7 @@ class NaiveModel:
         for name in m:
             if name in tools:
                 arg = parts[0] if parts else "all"
-                parts.append('{"tool": "%s", "arguments": {"target": "%s"}}' % (name, arg))
+                parts.append(f'{{"tool": "{name}", "arguments": {{"target": "{arg}"}}}}')
                 break
         if re.search(r"sqlite|sql query", system, re.IGNORECASE):
             return naive_sql(attempt.last_user)

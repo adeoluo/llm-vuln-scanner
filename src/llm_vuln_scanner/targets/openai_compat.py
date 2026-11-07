@@ -81,6 +81,7 @@ class OpenAICompatTarget:
         body = self.payload(attempt, seed, temperature, budget(attempt, max_tokens))
         t0 = time.perf_counter()
         last_error = ""
+        data: dict[str, Any] = {}
         for i in range(self.retries + 1):
             try:
                 data = self._post(body)
@@ -90,8 +91,6 @@ class OpenAICompatTarget:
                 if isinstance(exc, urllib.error.HTTPError) and exc.code < 500 and exc.code != 429:
                     break
                 time.sleep(min(8.0, 0.5 * 2**i))
-        else:
-            data = {}
         if not data:
             return Response(text="", error=last_error or "no response",
                             latency_s=time.perf_counter() - t0)  # fmt: skip
