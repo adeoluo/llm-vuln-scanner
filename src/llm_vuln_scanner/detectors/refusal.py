@@ -186,11 +186,17 @@ class Csr:
 
     def dot(self, w: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         rows = np.repeat(np.arange(self.rows), np.diff(self.indptr))
-        return np.bincount(rows, weights=self.data * w[self.indices], minlength=self.rows)
+        out: npt.NDArray[np.float64] = np.bincount(
+            rows, weights=self.data * w[self.indices], minlength=self.rows
+        ).astype(np.float64, copy=False)
+        return out
 
     def tdot(self, g: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         rows = np.repeat(np.arange(self.rows), np.diff(self.indptr))
-        return np.bincount(self.indices, weights=self.data * g[rows], minlength=self.dim)
+        out: npt.NDArray[np.float64] = np.bincount(
+            self.indices, weights=self.data * g[rows], minlength=self.dim
+        ).astype(np.float64, copy=False)
+        return out
 
 
 def featurize(texts: list[str], dim_bits: int = DIM_BITS, backend: _backend.Backend = "auto") -> Csr:
