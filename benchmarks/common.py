@@ -49,7 +49,9 @@ def hardware() -> dict[str, Any]:
 
 
 _AWS_ID = re.compile(r"\b(AKIA|ASIA)[A-Z2-7]{16}\b")
-_AWS_SECRET = re.compile(r"(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*[0-9])(?=[A-Za-z0-9+/]*[A-Z])[A-Za-z0-9+/]{40}(?![A-Za-z0-9+/])")
+_AWS_SECRET = re.compile(
+    r"(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*[0-9])(?=[A-Za-z0-9+/]*[A-Z])[A-Za-z0-9+/]{40}(?![A-Za-z0-9+/])"
+)
 
 
 def mask_credentials(obj: Any) -> Any:
