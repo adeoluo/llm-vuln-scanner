@@ -1,0 +1,28 @@
+[package]
+name = "lvs-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust core of llm-vuln-scanner: canary search over decoded views, bit-parallel LCS and hashed n-gram features"
+license = "MIT"
+authors = ["Adeolu Ogunnoiki"]
+repository = "https://github.com/adeoluo/llm-vuln-scanner"
+publish = false
+
+[lib]
+name = "lvs_rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+# Enabled by maturin (see pyproject.toml). Plain `cargo test` builds without linking Python.
+python = ["dep:pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.30", optional = true, features = ["abi3-py311"] }
+rayon = "1.10"
+regex = "1.11"
+unicode-normalization = "0.1"
+
+[profile.release]
+lto = true
+codegen-units = 1

@@ -27,7 +27,6 @@ it against scikit-learn's ``LogisticRegression`` when installed).
 from __future__ import annotations
 
 import io
-import math
 import re
 from dataclasses import dataclass
 from importlib import resources
@@ -186,35 +185,35 @@ class Csr:
         return len(self.indptr) - 1
 
     def dot(self, w: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        prod = self.data * w[self.indices]
-        return np.add.reduceat(prod, self.indptr[:-1]) if len(prod) else np.zeros(self.rows)
+        rows = np.repeat(np.arange(self.rows), np.diff(self.indptr))
+        return np.bincount(rows, weights=self.data * w[self.indices], minlength=self.rows)
 
     def tdot(self, g: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         rows = np.repeat(np.arange(self.rows), np.diff(self.indptr))
-        out = np.zeros(self.dim)
-        np.add.at(out, self.indices, self.data * g[rows])
-        return out
+        return np.bincount(self.indices, weights=self.data * g[rows], minlength=self.dim)
 
 
 def featurize(texts: list[str], dim_bits: int = DIM_BITS, backend: _backend.Backend = "auto") -> Csr:
-    """Feature matrix for ``texts`` (every row has at least one feature from padding)."""
-    indptr = [0]
-    indices: list[int] = []
-    data: list[float] = []
-    for t in texts:
-        counts = ngram_counts(t, dim_bits, backend=backend)
-        keys = sorted(counts)
-        vals = [1.0 + math.log(counts[k]) for k in keys]
-        norm = math.sqrt(sum(v * v for v in vals)) or 1.0
-        indices.extend(keys)
-        data.extend(v / norm for v in vals)
-        indptr.append(len(indices))
-    return Csr(
-        np.asarray(indptr, dtype=np.int64),
-        np.asarray(indices, dtype=np.int64),
-        np.asarray(data, dtype=np.float64),
-        1 << dim_bits,
-    )
+    """Feature matrix for ``texts`` (an empty text gives an empty row)."""
+    if _backend.resolve(backend) == "rust":
+        pairs = _backend.rust().ngram_counts_batch([normalize(t) for t in texts], dim_bits)
+        idx_parts = [np.asarray(i, dtype=np.int64) for i, _ in pairs]
+        cnt_parts = [np.asarray(c, dtype=np.float64) for _, c in pairs]
+    else:
+        idx_parts, cnt_parts = [], []
+        for t in texts:
+            counts = ngram_counts_py(t, dim_bits)
+            keys = sorted(counts)
+            idx_parts.append(np.asarray(keys, dtype=np.int64))
+            cnt_parts.append(np.asarray([counts[k] for k in keys], dtype=np.float64))
+    lengths = np.asarray([len(p) for p in idx_parts], dtype=np.int64)
+    indptr = np.concatenate([[0], np.cumsum(lengths)]).astype(np.int64)
+    indices = np.concatenate(idx_parts) if idx_parts else np.zeros(0, dtype=np.int64)
+    vals = 1.0 + np.log(np.concatenate(cnt_parts)) if cnt_parts else np.zeros(0)
+    rows = np.repeat(np.arange(len(texts)), lengths)
+    norms = np.sqrt(np.bincount(rows, weights=vals * vals, minlength=len(texts)))
+    norms[norms == 0] = 1.0
+    return Csr(indptr, indices, vals / norms[rows], 1 << dim_bits)
 
 
 def _sigmoid(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
