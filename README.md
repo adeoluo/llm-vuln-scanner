@@ -1,15 +1,15 @@
-<h1 align="center">Llm Vuln Scanner</h1>
+<h1 align="center">LLM Vuln Scanner</h1>
 
 <p align="center">
   <em>An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2025 and MITRE ATLAS.</em>
 </p>
 
 <p align="center">
-  <a href="../../actions"><img alt="CI" src="https://img.shields.io/badge/CI-passing-brightgreen"></a>
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-90%25-brightgreen">
-  <img alt="Python" src="https://img.shields.io/badge/python-3.11+-blue">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
-  <a href="DEMONSTRATION_URL"><img alt="Demonstration" src="https://img.shields.io/badge/demonstration-live-6366F1"></a>
+  <a href="https://github.com/adeoluo/llm-vuln-scanner/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/llm-vuln-scanner/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/adeoluo/llm-vuln-scanner/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/llm-vuln-scanner"></a>
+  <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-core-B7410E">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
 ---
