@@ -1,12 +1,18 @@
 services:
-  application:
+  scanner:
     build: .
-    env_file: .env
     ports:
       - "8000:8000"
+    command: ["python", "-m", "llm_vuln_scanner", "serve", "--host", "0.0.0.0",
+              "--allow-target", "naive,refusing,app:http://demo-app:8088"]
     restart: unless-stopped
+  demo-app:
+    build: .
+    ports:
+      - "127.0.0.1:8088:8088"
+    command: ["python", "-m", "llm_vuln_scanner", "demo-app", "--host", "0.0.0.0", "--port", "8088"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import llm_vuln_scanner"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8088/health')"]
       interval: 30s
       timeout: 3s
       retries: 3
