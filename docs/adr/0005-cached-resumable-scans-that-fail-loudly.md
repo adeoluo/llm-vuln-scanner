@@ -15,8 +15,15 @@ Errors are not findings, so that run looked like a model with almost nothing to 
   seed, temperature and token budget; errors are never cached, so a rerun retries them.
 - `ScanConfig.max_consecutive_errors` (CLI `--max-consecutive-errors`, default 25) aborts
   the scan with `ScanAbortedError` when the target fails that many times in a row.
-- The benchmark runner keeps llama-server logs, sizes the KV cache per model (2 slots of
-  2,048 tokens for SmolLM2-1.7B) and refuses to publish a run with more than 1% errors.
+- The benchmark runner keeps llama-server logs, sizes the parallel slots per model (2 slots
+  for the 3B and 4B models on the shared 8 GB machine) and refuses to publish a run with
+  more than 1% errors.
+- Long scans are split with `ScanConfig.only` (CLI `--only`): the full probe set is
+  planned and only part of it runs. Canaries are drawn in plan order, so planning a subset
+  on its own would change the canaries, and therefore the cache keys, of later probes;
+  with `only` every chunk fills the same cache entries the full scan reads. This was
+  added after a Qwen3.5-4B scan split by `--probes` had to regenerate most of its
+  responses in the final full run.
 - Reports always carry the error count next to the attempt count.
 
 ## Consequences

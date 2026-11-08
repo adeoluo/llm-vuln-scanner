@@ -88,6 +88,7 @@ def cmd_scan(a: argparse.Namespace) -> int:
     cfg = ScanConfig(
         probes=_csv(a.probes), generations=a.generations, temperature=a.temperature, seed=a.seed,
         concurrency=a.concurrency, max_tokens=a.max_tokens, sample=a.sample,
+        only=_csv(a.only) if a.only else None,
         cache_path=Path(a.cache) if a.cache else None, data_dir=Path(a.data_dir) if a.data_dir else None,
         profile=profile, extra_detectors=extra, disabled_detectors=disabled,
         max_consecutive_errors=a.max_consecutive_errors or None,
@@ -259,6 +260,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--concurrency", type=int, default=1, help="parallel requests (and llama.cpp slots)")
     s.add_argument("--max-tokens", type=int, default=None, help="override every attempt's token budget")
     s.add_argument("--sample", type=int, default=None, help="at most N attempts per probe (seeded)")
+    s.add_argument("--only", default=None, help="run only these probes or families of the planned set "
+                   "(same attempts and canaries as the full scan; for splitting a scan into chunks)")  # fmt: skip
     s.add_argument("--cache", default=None, help="JSONL response cache (resumable scans)")
     s.add_argument("--max-consecutive-errors", type=int, default=25,
                    help="abort when the target fails this many times in a row (0 never aborts)")  # fmt: skip
