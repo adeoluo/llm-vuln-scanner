@@ -36,3 +36,7 @@ checkpoints/
 # Scan reports and local benchmark scratch
 /reports/
 *.log
+
+# Rust
+rust/target/
+*.so

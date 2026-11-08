@@ -7,6 +7,7 @@ import csv
 import json
 import os
 import platform
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -47,8 +48,27 @@ def hardware() -> dict[str, Any]:
     return info
 
 
+_AWS_ID = re.compile(r"\b(AKIA|ASIA)[A-Z2-7]{16}\b")
+_AWS_SECRET = re.compile(
+    r"(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*[0-9])(?=[A-Za-z0-9+/]*[A-Z])[A-Za-z0-9+/]{40}(?![A-Za-z0-9+/])"
+)
+
+
+def mask_credentials(obj: Any) -> Any:
+    """Mask credential-shaped strings (the fake AWS keys the disclosure probe plants)
+    so committed results never contain anything a secret scanner would flag."""
+    if isinstance(obj, str):
+        return _AWS_SECRET.sub("[masked-secret]", _AWS_ID.sub(r"\1[masked]", obj))
+    if isinstance(obj, list):
+        return [mask_credentials(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: mask_credentials(v) for k, v in obj.items()}
+    return obj
+
+
 def write_json(name: str, data: Any) -> Path:
     RESULTS.mkdir(parents=True, exist_ok=True)
     path = RESULTS / name
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(mask_credentials(data), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return path

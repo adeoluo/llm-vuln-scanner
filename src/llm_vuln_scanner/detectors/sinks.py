@@ -261,7 +261,7 @@ class SqlDetector:
 # ----------------------------------------------------------------------------- shell
 
 _SHELL_META = {";", "&&", "||", "|", "&", ">", ">>", "<", "<<", "|&", ";;", "(", ")"}
-_SHELL_LINE = re.compile(r"^\s*(?:\$\s*)?([a-z][\w.-]*)\b.*$", re.MULTILINE)
+_SHELL_LINE = re.compile(r"^\s*(?:\$\s*)?[`'\"]?([a-z][\w.-]*)\b.*$", re.MULTILINE)
 
 
 def extract_shell(text: str) -> str | None:
