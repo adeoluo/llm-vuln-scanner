@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import glob
 import json
 import os
 import platform
 import re
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +18,62 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "benchmarks" / "results"
 BENCH = Path(os.environ.get("LVS_BENCH_DIR", ROOT.parent / ".bench-data" / "llm-vuln-scanner"))
 DATA = BENCH / "data"
+HF = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache" / "huggingface" / "hub"))
 XSTEST_MODELS = ("gpt4", "llama2new", "llama2orig", "mistralguard", "mistralinstruct")
+
+# Qwen3.5 is a hybrid reasoning model that thinks by default; the scans use its
+# non-thinking mode (the chat template's enable_thinking switch), which is how a chat
+# feature with a latency budget usually serves it. Gemma 4 and Granite 4.2 answer
+# without a thinking phase unless asked for one.
+NO_THINKING = ("--chat-template-kwargs", '{"enable_thinking": false}')
+
+
+@dataclass(frozen=True)
+class LocalModel:
+    """A GGUF build of a small open instruction model, served with llama.cpp."""
+
+    key: str
+    model_id: str
+    gguf_repo: str
+    gguf_file: str
+    quant: str
+    released: str
+    extra_args: tuple[str, ...] = ()
+    slots: int = 4
+    ctx_per_slot: int = 4096
+
+    @property
+    def label(self) -> str:
+        return f"{self.model_id.split('/')[-1]} {self.quant}"
+
+    def path(self) -> str:
+        pattern = HF / ("models--" + self.gguf_repo.replace("/", "--")) / "snapshots" / "*" / self.gguf_file
+        hits = glob.glob(str(pattern))
+        if not hits:
+            raise SystemExit(
+                f"{self.key}: {self.gguf_file} not found under {HF}; run scripts/download_models.sh"
+            )
+        return hits[0]
+
+
+# The current small open instruction models (no token needed). Q3_K_M for the 4B keeps
+# llama-server under about 2.7 GB on the 8 GB test machine.
+MODELS: dict[str, LocalModel] = {
+    m.key: m
+    for m in (
+        LocalModel("qwen3.5-0.8b", "Qwen/Qwen3.5-0.8B", "unsloth/Qwen3.5-0.8B-GGUF",
+                   "Qwen3.5-0.8B-Q4_K_M.gguf", "Q4_K_M", "2026-02", NO_THINKING),
+        LocalModel("qwen3.5-2b", "Qwen/Qwen3.5-2B", "unsloth/Qwen3.5-2B-GGUF",
+                   "Qwen3.5-2B-Q4_K_M.gguf", "Q4_K_M", "2026-02", NO_THINKING),
+        LocalModel("qwen3.5-4b", "Qwen/Qwen3.5-4B", "unsloth/Qwen3.5-4B-GGUF",
+                   "Qwen3.5-4B-Q3_K_M.gguf", "Q3_K_M", "2026-02", NO_THINKING),
+        LocalModel("gemma-4-e2b", "google/gemma-4-E2B-it", "google/gemma-4-E2B-it-qat-q4_0-gguf",
+                   "gemma-4-E2B_q4_0-it.gguf", "Q4_0 QAT", "2026-03"),
+        LocalModel("granite-4.2-3b", "ibm-granite/granite-4.2-3b", "ibm-granite/granite-4.2-3b-GGUF",
+                   "granite-4.2-3b-Q4_K_M.gguf", "Q4_K_M", "2026-08"),
+    )
+}  # fmt: skip
+PRIMARY = "qwen3.5-2b"
 
 
 def xstest_rows() -> list[dict[str, Any]]:

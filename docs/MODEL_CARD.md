@@ -7,8 +7,12 @@
   2026 and MITRE ATLAS v2026.10.
 - **Bundled model:** `refusal-v1`, a logistic regression over 2^18 hashed character and
   word n-grams, trained on the 2,250 human-labelled XSTest v2 completions (0.6 MB).
-- **Models scanned in the benchmarks:** Qwen2.5-0.5B-Instruct (transformers, fp16 on MPS),
-  Qwen2.5-1.5B-Instruct and SmolLM2-1.7B-Instruct (Q4_K_M GGUF on llama.cpp).
+- **Models scanned in the benchmarks:** Qwen3.5-0.8B, Qwen3.5-2B (Q4_K_M) and Qwen3.5-4B
+  (Q3_K_M) in non-thinking mode, gemma-4-E2B-it (Q4_0, quantization-aware) and
+  granite-4.2-3b (Q4_K_M), all GGUF builds on llama.cpp 0.9.0 (b9.0); the demo
+  application, the public dataset probes and the garak 0.17.1 comparison run on
+  Qwen3.5-2B. The refusal detectors are compared with ProtectAI
+  distilroberta-base-rejection-v1, Qwen3Guard-Gen-0.6B and a Qwen3.5-2B judge.
 - **Version and date:** 0.1.0, November 2026.
 
 ## Intended use
@@ -42,5 +46,6 @@ with regex matching (see the ablation table).
   write-denying authorizer; shell output is tokenized, never run.
 
 ## Environmental and cost footprint
-All benchmarks ran on one Apple M1 laptop (8 GB, 8 cores); a full default scan of a 1.5B
-model takes about 25 minutes. No paid API was used.
+All benchmarks ran on one Apple M1 laptop (8 GB, 8 cores) whose GPU was shared with
+another training job; a full default scan (540 attempts) of a 0.8B to 2B model took 37 to
+55 minutes there. No paid API was used.
