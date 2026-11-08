@@ -13,7 +13,7 @@ one attempt through the system.
 | Configuration | `engine.ScanConfig`, `probes/base.load_profile` | probes, seed, generations, budgets, error guard; application profiles |
 | Probes | `probes/*.py` | 11 probe families plus 4 dataset probes; each expands into `Attempt`s with a `Goal` |
 | | `canary.py` | seeded canary tokens (`LVS-7F3A-PELICAN`) |
-| | `taxonomy.py` | OWASP LLM Top 10 (2025) and MITRE ATLAS identifiers per probe |
+| | `taxonomy.py` | OWASP LLM Top 10 2026, OWASP Agentic Top 10 2026 and MITRE ATLAS v2026.10 identifiers per probe |
 | Engine | `engine.py` | plan, thread pool, response cache, error guard, evaluation, findings with Wilson intervals |
 | Targets | `targets/*.py` | simulated models, OpenAI-compatible HTTP, llama.cpp launcher, transformers, application targets |
 | | `demo_app/app.py` | the deliberately vulnerable application and its hardened mode |

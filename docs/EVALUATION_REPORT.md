@@ -45,12 +45,12 @@ prompt, planted secrets, tools and sinks come from the probe itself.
 | `injection.indirect` | LLM01 | 18/72 (25%, 16% to 36%) | 22/72 (31%, 21% to 42%) |
 | `jailbreak.templates` | LLM01 | 75/90 (83%, 74% to 90%) | 27/90 (30%, 22% to 40%) |
 | `disclosure.secrets` | LLM02 | 31/48 (65%, 50% to 77%) | 26/48 (54%, 40% to 67%) |
-| `output.shell` | LLM05 | 18/24 (75%, 55% to 88%) | 17/24 (71%, 51% to 85%) |
-| `output.sql` | LLM05 | 10/24 (42%, 24% to 61%) | 13/24 (54%, 35% to 72%) |
-| `output.xss` | LLM05 | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) |
-| `agency.tools` | LLM06 | 7/40 (18%, 9% to 32%) | 4/40 (10%, 4% to 23%) |
-| `leakage.system_prompt` | LLM07 | 43/80 (54%, 43% to 64%) | 27/80 (34%, 24% to 45%) |
-| `dos.token_blowup` | LLM10 | 2/12 (17%, 5% to 45%) | 4/12 (33%, 14% to 61%) |
+| `output.shell` | LLM10 | 18/24 (75%, 55% to 88%) | 17/24 (71%, 51% to 85%) |
+| `output.sql` | LLM10 | 10/24 (42%, 24% to 61%) | 13/24 (54%, 35% to 72%) |
+| `output.xss` | LLM10 | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) |
+| `agency.tools` | LLM03 | 7/40 (18%, 9% to 32%) | 4/40 (10%, 4% to 23%) |
+| `leakage.system_prompt` | LLM08 | 43/80 (54%, 43% to 64%) | 27/80 (34%, 24% to 45%) |
+| `dos.token_blowup` | LLM06 | 2/12 (17%, 5% to 45%) | 4/12 (33%, 14% to 61%) |
 | **All attacks** | | **268/540** (50%) | **200/540** (37%) |
 | Errors | | 0 | 0 |
 | Wall clock | | 24 min | 34 min |
@@ -60,20 +60,20 @@ attacks on fictional restricted tasks, SmolLM2-1.7B 27 of 90 (difference +53 poi
 Newcombe 95% CI +40 to +64). Leakage of the system prompt also differs (+20 points, +5 to
 +34); the other probes overlap within their intervals.
 
-### OWASP LLM Top 10 (2025) coverage and attack success rate
+### OWASP Top 10 for LLM Applications 2026 coverage and attack success rate
 
 | Category | qwen2.5-1.5b | smollm2-1.7b | demo-vulnerable | demo-hardened |
 |---|---|---|---|---|
 | LLM01 Prompt Injection | 141/288 (49%) | 97/288 (34%) | 29/106 (27%) | 17/106 (16%) |
 | LLM02 Sensitive Information Disclosure | 31/48 (65%) | 26/48 (54%) | 7/12 (58%) | 0/12 (0%) |
-| LLM03 Supply Chain | not tested | not tested | not tested | not tested |
-| LLM04 Data and Model Poisoning | not tested | not tested | not tested | not tested |
-| LLM05 Improper Output Handling | 44/72 (61%) | 42/72 (58%) | 18/36 (50%) | 0/36 (0%) |
-| LLM06 Excessive Agency | 7/40 (18%) | 4/40 (10%) | 7/40 (18%) | 0/40 (0%) |
-| LLM07 System Prompt Leakage | 43/80 (54%) | 27/80 (34%) | 9/16 (56%) | 0/16 (0%) |
-| LLM08 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested |
-| LLM09 Misinformation | not tested | not tested | not tested | not tested |
-| LLM10 Unbounded Consumption | 2/12 (17%) | 4/12 (33%) | 1/12 (8%) | 0/12 (0%) |
+| LLM03 Excessive Agency | 7/40 (18%) | 4/40 (10%) | 7/40 (18%) | 0/40 (0%) |
+| LLM04 Supply Chain | not tested | not tested | not tested | not tested |
+| LLM05 Data and Model Poisoning | not tested | not tested | not tested | not tested |
+| LLM06 Unbounded Consumption | 2/12 (17%) | 4/12 (33%) | 1/12 (8%) | 0/12 (0%) |
+| LLM07 Misinformation | not tested | not tested | not tested | not tested |
+| LLM08 Hidden Context Exposure | 43/80 (54%) | 27/80 (34%) | 9/16 (56%) | 0/16 (0%) |
+| LLM09 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested |
+| LLM10 Improper Output Handling | 44/72 (61%) | 42/72 (58%) | 18/36 (50%) | 0/36 (0%) |
 
 "Not tested" categories need access the black-box probes do not have (see Limitations).
 
@@ -94,12 +94,12 @@ high-impact tools).
 | `injection.direct` | LLM01 | 7/12 (58%, 32% to 81%) | 8/12 (67%, 39% to 86%) |
 | `injection.indirect` | LLM01 | 17/72 (24%, 15% to 35%) | 6/72 (8%, 4% to 17%) |
 | `disclosure.secrets` | LLM02 | 7/12 (58%, 32% to 81%) | 0/12 (0%, 0% to 24%) |
-| `output.shell` | LLM05 | 9/12 (75%, 47% to 91%) | 0/12 (0%, 0% to 24%) |
-| `output.sql` | LLM05 | 6/12 (50%, 25% to 75%) | 0/12 (0%, 0% to 24%) |
-| `output.xss` | LLM05 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
-| `agency.tools` | LLM06 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) |
-| `leakage.system_prompt` | LLM07 | 9/16 (56%, 33% to 77%) | 0/16 (0%, 0% to 19%) |
-| `dos.token_blowup` | LLM10 | 1/12 (8%, 1% to 35%) | 0/12 (0%, 0% to 24%) |
+| `output.shell` | LLM10 | 9/12 (75%, 47% to 91%) | 0/12 (0%, 0% to 24%) |
+| `output.sql` | LLM10 | 6/12 (50%, 25% to 75%) | 0/12 (0%, 0% to 24%) |
+| `output.xss` | LLM10 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
+| `agency.tools` | LLM03 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) |
+| `leakage.system_prompt` | LLM08 | 9/16 (56%, 33% to 77%) | 0/16 (0%, 0% to 19%) |
+| `dos.token_blowup` | LLM06 | 1/12 (8%, 1% to 35%) | 0/12 (0%, 0% to 24%) |
 | **All attacks** | | **71/222** (32%) | **17/222** (8%) |
 | Errors | | 0 | 0 |
 

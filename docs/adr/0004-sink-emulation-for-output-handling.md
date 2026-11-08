@@ -4,7 +4,7 @@
 - **Date:** 2026-11-07
 
 ## Context
-Improper output handling (OWASP LLM05) is about what happens when model output reaches
+Improper output handling (OWASP LLM10:2026, LLM05 in the 2025 edition) is about what happens when model output reaches
 an HTML page, a SQL engine or a shell. Regex lists of "dangerous strings" both over-flag
 (a model that *explains* XSS in prose) and under-flag (event handler attributes, stacked
 SQL statements, quoting tricks).
