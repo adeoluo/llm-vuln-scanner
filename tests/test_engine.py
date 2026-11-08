@@ -155,3 +155,22 @@ def test_isolated_errors_reset_the_streak() -> None:
 def test_max_consecutive_errors_validation() -> None:
     with pytest.raises(ValueError, match="max_consecutive_errors"):
         ScanConfig(max_consecutive_errors=0)
+
+
+def test_digest_covers_documents_sent_to_applications() -> None:
+    from llm_vuln_scanner.types import Goal, Message
+
+    msgs = (Message("user", "Summarize the attached document."),)
+    a = Attempt(id="a", probe="injection.indirect", messages=msgs, goal=Goal(), meta={"document": "one"})
+    b = Attempt(id="b", probe="injection.indirect", messages=msgs, goal=Goal(), meta={"document": "two"})
+    c = Attempt(id="c", probe="injection.indirect", messages=msgs, goal=Goal())
+    assert len({a.digest(), b.digest(), c.digest()}) == 3
+
+
+def test_application_plan_has_unique_cache_keys() -> None:
+    from llm_vuln_scanner.probes.base import load_profile
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = ScanConfig(profile=load_profile(root / "examples" / "demo-app.json"))
+    plan = Scanner(RefusingModel(), cfg).plan()
+    assert len({a.digest() for a in plan}) == len(plan)
