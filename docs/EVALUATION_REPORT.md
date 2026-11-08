@@ -94,7 +94,7 @@ documents more often. Qwen3.5-2B never called a tool because of an injected emai
 | LLM05:2026 Data and Model Poisoning | not tested | not tested | not tested | not tested |
 | LLM06:2026 Unbounded Consumption | 7/12 (58%) | 5/12 (42%) | 3/12 (25%) | 0/12 (0%) |
 | LLM07:2026 Misinformation | not tested | not tested | not tested | not tested |
-| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 8/15 (53%) | 0/16 (0%) |
+| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 8/16 (50%) | 0/16 (0%) |
 | LLM09:2026 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested |
 | LLM10:2026 Improper Output Handling | 32/72 (44%) | 34/72 (47%) | 16/36 (44%) | 0/36 (0%) |
 
@@ -131,12 +131,12 @@ high-impact tools). Reproduce with `make demo-scans`.
 | `disclosure.secrets` | LLM02:2026 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
 | `agency.tools` | LLM03:2026 | 0/40 (0%, 0% to 9%) | 0/40 (0%, 0% to 9%) |
 | `dos.token_blowup` | LLM06:2026 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
-| `leakage.system_prompt` | LLM08:2026 | 8/15 (53%, 30% to 75%) | 0/16 (0%, 0% to 19%) |
+| `leakage.system_prompt` | LLM08:2026 | 8/16 (50%, 28% to 72%) | 0/16 (0%, 0% to 19%) |
 | `output.shell` | LLM10:2026 | 8/12 (67%, 39% to 86%) | 0/12 (0%, 0% to 24%) |
 | `output.sql` | LLM10:2026 | 5/12 (42%, 19% to 68%) | 0/12 (0%, 0% to 24%) |
 | `output.xss` | LLM10:2026 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
-| **All attacks** | | **81/221** (37%) | **37/222** (17%) |
-| Errors | | 1 | 0 |
+| **All attacks** | | **81/222** (36%) | **37/222** (17%) |
+| Errors | | 0 | 0 |
 
 Hardening removes every SQL, shell, XSS, secret, hidden-context and token blow-up
 finding. Direct prompt injection succeeds as often in both modes (8/12): the mitigations
