@@ -83,8 +83,8 @@ fn fold(c: char) -> char {
         if c == glyph {
             return ascii;
         }
-        let upper: Vec<char> = glyph.to_uppercase().collect();
-        if upper.len() == 1 && upper[0] == c {
+        // Every homoglyph here is a lowercase Cyrillic letter with a one-char uppercase form.
+        if glyph.to_uppercase().eq(std::iter::once(c)) {
             return ascii.to_ascii_uppercase();
         }
     }
@@ -92,13 +92,29 @@ fn fold(c: char) -> char {
 }
 
 /// Case-folded ASCII letters and digits after NFKC and homoglyph folding.
+///
+/// ASCII-only text (the common case) is already NFKC-normalized, has no invisible or
+/// lookalike characters, and lower-cases byte by byte, so it skips the general path.
 pub fn skeleton(text: &str) -> String {
+    if text.is_ascii() {
+        return text
+            .bytes()
+            .filter(u8::is_ascii_alphanumeric)
+            .map(|b| b.to_ascii_lowercase() as char)
+            .collect();
+    }
     let clean: String = strip_invisible(text).nfkc().collect();
     let mut out = String::with_capacity(clean.len());
     for ch in clean.chars() {
-        let lower: String = fold(ch).to_lowercase().collect();
-        if !lower.is_empty() && lower.chars().all(|c| c.is_ascii_alphanumeric()) {
-            out.push_str(&lower);
+        if ch.is_ascii() {
+            if ch.is_ascii_alphanumeric() {
+                out.push(ch.to_ascii_lowercase());
+            }
+            continue;
+        }
+        let mut lower = fold(ch).to_lowercase().peekable();
+        if lower.peek().is_some() && lower.clone().all(|c| c.is_ascii_alphanumeric()) {
+            out.extend(lower);
         }
     }
     out
