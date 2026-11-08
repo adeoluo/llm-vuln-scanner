@@ -1,8 +1,10 @@
 """Hugging Face transformers target for local chat models (MPS, CUDA or CPU).
 
-Needs the ``transformers`` extra (``uv sync --extra transformers``). The chat template
-of the model formats the conversation; generation is greedy at temperature 0 and
-sampled with a per-call seed otherwise, so every response is reproducible.
+Needs the ``transformers`` extra (``uv sync --extra transformers``; transformers 5). The
+chat template of the model formats the conversation (``chat_template_kwargs`` are passed
+to it, for example ``{"enable_thinking": False}`` for Qwen3.5); generation is greedy at
+temperature 0 and sampled with a per-call seed otherwise, so every response is
+reproducible.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ class TransformersTarget:
     concurrent = False
 
     def __init__(self, model_id: str, device: str | None = None, dtype: str = "auto",
-                 max_input_tokens: int = 6144) -> None:  # fmt: skip
+                 max_input_tokens: int = 6144, chat_template_kwargs: dict[str, Any] | None = None) -> None:  # fmt: skip
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -36,10 +38,11 @@ class TransformersTarget:
                        "float16": torch.float16, "bfloat16": torch.bfloat16,
                        "float32": torch.float32}[dtype]  # fmt: skip
         self.tokenizer: Any = AutoTokenizer.from_pretrained(model_id)
-        self.model: Any = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch_dtype)
+        self.model: Any = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch_dtype)
         self.model.to(device).eval()
         self.name = "transformers:" + model_id.rsplit("/", 1)[-1]
         self.max_input_tokens = max_input_tokens
+        self.chat_template_kwargs = dict(chat_template_kwargs or {})
         self._lock = threading.Lock()
 
     def generate(self, attempt: Attempt, *, seed: int = 0, temperature: float = 0.0,
@@ -49,7 +52,9 @@ class TransformersTarget:
         cap = budget(attempt, max_tokens)
         t0 = time.perf_counter()
         with self._lock:
-            ids = self.tokenizer.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt")
+            enc = self.tokenizer.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt",
+                                                     return_dict=True, **self.chat_template_kwargs)  # fmt: skip
+            ids = enc["input_ids"]
             if ids.shape[1] > self.max_input_tokens:
                 ids = ids[:, -self.max_input_tokens :]
             ids = ids.to(self.device)

@@ -1,7 +1,7 @@
 //! Canary search across all views; mirrors `llm_vuln_scanner.matching.find_canaries_py`.
 
 use crate::aho::AhoCorasick;
-use crate::views::{skeleton, unleet, views, VIEW_ORDER};
+use crate::views::{VIEW_ORDER, skeleton, unleet, views};
 
 /// Shortest skeleton a canary needs before the normalized views are searched.
 pub const MIN_SKELETON: usize = 6;
