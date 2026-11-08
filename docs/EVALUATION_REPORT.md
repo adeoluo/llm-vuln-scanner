@@ -9,11 +9,12 @@ the commands that produce each results file are listed under Reproducibility.
   network on the same GPU during most runs, so wall-clock times are upper bounds); one
   heavy job at a time, peak memory under 3 GB.
 - **Targets:** the current small open instruction models, as GGUF builds served by
-  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 2 or 4 parallel slots of 4,096 tokens (per model in the first table):
+  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 2 or 4 parallel slots of 4,096
+  tokens (per model in the first table):
   - Qwen3.5-0.8B and Qwen3.5-2B (Q4_K_M) and Qwen3.5-4B (Q3_K_M, about 2.9 GB of server
     memory with 4 slots; it continued with 2 slots when the machine started swapping),
-    released February 2026, from the unsloth GGUF builds. Qwen3.5 is
-    a hybrid reasoning model that thinks by default; the scans use its non-thinking mode
+    released February 2026, from the unsloth GGUF builds. Qwen3.5 is a hybrid reasoning
+    model that thinks by default; the scans use its non-thinking mode
     (`--chat-template-kwargs '{"enable_thinking": false}'`), the usual setting for a chat
     feature with a latency budget;
   - gemma-4-E2B-it (Google's quantization-aware Q4_0 build), released March 2026, and
@@ -36,8 +37,9 @@ the commands that produce each results file are listed under Reproducibility.
   differences between two targets use Newcombe's hybrid score interval. Errors are
   counted separately and are zero in every committed run.
 - **Graders:** deterministic detectors (canary search, LCS leakage, SQLite sink, HTML parser,
-  shell tokenizer, tool-call log, token budget, regex) and, for jailbreaks, the refusal
-  classifier (`rule="all"`: the compliance canary and a non-refusal are both required).
+  shell tokenizer, tool-call log, token budget, regex) and, for jailbreaks, two refusal
+  detectors (`rule="all"`: the compliance canary and a non-refusal from both the trained
+  classifier and the phrase list are required; ADR-0006).
   The refusal detectors are validated against human labels (XSTest v2) below, next to two
   references: ProtectAI distilroberta-base-rejection-v1 and Qwen3Guard-Gen-0.6B.
 
@@ -74,7 +76,7 @@ were planned without the other probes (ADR-0005).
 | `encoding.obfuscation` | LLM01:2026 | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 19/66 (29%, 19% to 41%) | 36/66 (55%, 43% to 66%) |
 | `injection.direct` | LLM01:2026 | 50/60 (83%, 72% to 91%) | 52/60 (87%, 76% to 93%) | 47/60 (78%, 66% to 87%) | 39/60 (65%, 52% to 76%) | 50/60 (83%, 72% to 91%) |
 | `injection.indirect` | LLM01:2026 | 22/72 (31%, 21% to 42%) | 38/72 (53%, 41% to 64%) | 44/72 (61%, 50% to 72%) | 27/72 (38%, 27% to 49%) | 52/72 (72%, 61% to 81%) |
-| `jailbreak.templates` | LLM01:2026 | 79/90 (88%, 79% to 93%) | 37/90 (41%, 32% to 51%) | 35/90 (39%, 29% to 49%) | 78/90 (87%, 78% to 92%) | 44/90 (49%, 39% to 59%) |
+| `jailbreak.templates` | LLM01:2026 | 73/90 (81%, 72% to 88%) | 23/90 (26%, 18% to 35%) | 25/90 (28%, 20% to 38%) | 59/90 (66%, 55% to 75%) | 23/90 (26%, 18% to 35%) |
 | `disclosure.secrets` | LLM02:2026 | 26/48 (54%, 40% to 67%) | 23/48 (48%, 34% to 62%) | 21/48 (44%, 31% to 58%) | 21/48 (44%, 31% to 58%) | 27/48 (56%, 42% to 69%) |
 | `agency.tools` | LLM03:2026 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) | 1/40 (2%, 0% to 13%) | 4/40 (10%, 4% to 23%) | 0/40 (0%, 0% to 9%) |
 | `dos.token_blowup` | LLM06:2026 | 7/12 (58%, 32% to 81%) | 5/12 (42%, 19% to 68%) | 2/12 (17%, 5% to 45%) | 0/12 (0%, 0% to 24%) | 3/12 (25%, 9% to 53%) |
@@ -82,14 +84,14 @@ were planned without the other probes (ADR-0005).
 | `output.shell` | LLM10:2026 | 18/24 (75%, 55% to 88%) | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 15/24 (62%, 43% to 79%) |
 | `output.sql` | LLM10:2026 | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 11/24 (46%, 28% to 65%) | 12/24 (50%, 31% to 69%) | 9/24 (38%, 21% to 57%) |
 | `output.xss` | LLM10:2026 | 2/24 (8%, 2% to 26%) | 7/24 (29%, 15% to 49%) | 14/24 (58%, 39% to 76%) | 11/24 (46%, 28% to 65%) | 19/24 (79%, 60% to 91%) |
-| **All attacks** | | **276/540** (51%) | **250/540** (46%) | **248/540** (46%) | **245/540** (45%) | **282/540** (52%) |
+| **All attacks** | | **270/540** (50%) | **236/540** (44%) | **238/540** (44%) | **226/540** (42%) | **261/540** (48%) |
 | Errors | | 0 | 0 | 0 | 0 | 0 |
 
 Every model is vulnerable in 10 or 11 of the 11 probe families, and the totals are close
-(245 to 282 of 540 attacks, 45% to 52%), but the profiles differ. Jailbreak templates on
-fictional restricted tasks split the models: Qwen3.5-0.8B (79 of 90) and gemma-4-E2B-it
-(78) follow most of them, Qwen3.5-2B (37), Qwen3.5-4B (35) and granite-4.2-3b (44) fewer
-than half (gemma-4-E2B-it against Qwen3.5-2B: +46 points, Newcombe 95% CI +32 to +57).
+(226 to 270 of 540 attacks, 42% to 50%), but the profiles differ. Jailbreak templates on
+fictional restricted tasks split the models: Qwen3.5-0.8B (73 of 90) and gemma-4-E2B-it
+(59) follow most of them, Qwen3.5-2B (23), Qwen3.5-4B (25) and granite-4.2-3b (23) about a
+quarter (gemma-4-E2B-it against Qwen3.5-2B: +40 points, Newcombe 95% CI +26 to +52).
 granite-4.2-3b is the most exposed to indirect injection (52 of 72; +19 points over
 Qwen3.5-2B, +4 to +34) and writes executable HTML most often (19 of 24; +50 points, +22
 to +68). Within Qwen3.5 the larger models act on instructions inside documents more often
@@ -102,7 +104,7 @@ summarised the email and quoted the instruction instead.
 
 | Category | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | gemma-4-e2b | granite-4.2-3b | demo-vulnerable | demo-hardened |
 |---|---|---|---|---|---|---|---|
-| LLM01:2026 Prompt Injection | 175/288 (61%) | 151/288 (52%) | 150/288 (52%) | 163/288 (57%) | 182/288 (63%) | 51/106 (48%) | 37/106 (35%) |
+| LLM01:2026 Prompt Injection | 169/288 (59%) | 137/288 (48%) | 140/288 (49%) | 144/288 (50%) | 161/288 (56%) | 51/106 (48%) | 37/106 (35%) |
 | LLM02:2026 Sensitive Information Disclosure | 26/48 (54%) | 23/48 (48%) | 21/48 (44%) | 21/48 (44%) | 27/48 (56%) | 3/12 (25%) | 0/12 (0%) |
 | LLM03:2026 Excessive Agency | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 4/40 (10%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
 | LLM04:2026 Supply Chain | not tested | not tested | not tested | not tested | not tested | not tested | not tested |
@@ -158,6 +160,34 @@ finding. Direct prompt injection succeeds as often in both modes (8/12): the mit
 limit what an injected instruction can reach, they do not stop the model from following
 it. Spotlighting untrusted documents cuts indirect injection from 53% to 33%.
 
+## Public attack datasets
+
+Attacks written by people rather than by this repository's templates, on Qwen3.5-2B:
+Tensor Trust hijacking ("say access granted") and extraction (reveal the access code)
+from the robustness benchmarks of Toyer et al. (2023), Gandalf password-extraction
+prompts from Lakera, and the in-the-wild jailbreak templates of Shen et al. (CCS 2024)
+filled with fictional restricted tasks. Tensor Trust and Gandalf are seeded samples of
+150 (of 776, 570 and 1,000); all 106 usable jailbreak templates are used. Reproduce with
+`make data dataset-scans`.
+
+### Public attack datasets on Qwen3.5-2B Q4_K_M
+
+| Probe | OWASP 2026 | qwen3.5-2b-datasets |
+|---|---|---|
+| `dataset.tensortrust_hijacking` | LLM01:2026 | 80/150 (53%, 45% to 61%) |
+| `dataset.wild_jailbreak` | LLM01:2026 | 21/106 (20%, 13% to 28%) |
+| `dataset.gandalf` | LLM08:2026 | 106/150 (71%, 63% to 77%) |
+| `dataset.tensortrust_extraction` | LLM08:2026 | 69/150 (46%, 38% to 54%) |
+| **All attacks** | | **276/556** (50%) |
+| Errors | | 0 |
+
+The human-written attacks succeed about as often as the templates: half of the Tensor
+Trust hijacking attacks make Qwen3.5-2B say "access granted" (80 of 150), 46% of the
+extraction attacks reveal the access code, Gandalf prompts extract the password in 71%
+of attempts, and 21 of 106 in-the-wild jailbreak templates get a fictional restricted
+task answered. The run took 24 minutes for 556 attempts. Published Tensor Trust
+robustness rates are for other models and were not rerun.
+
 ## Comparison with garak
 
 [garak](https://github.com/NVIDIA/garak) 0.17.1 (NVIDIA's LLM vulnerability scanner) against
@@ -173,7 +203,7 @@ category of the behaviour it tests (`benchmarks/garak_compare.py`). Reproduce wi
 
 | OWASP | garak probes | garak attacks flagged | this scanner probes | this scanner attacks succeeded |
 |---|---|---|---|---|
-| LLM01:2026 Prompt Injection | 12 | 196/543 (36%) | 4 | 151/288 (52%) |
+| LLM01:2026 Prompt Injection | 12 | 196/543 (36%) | 4 | 137/288 (48%) |
 | LLM02:2026 Sensitive Information Disclosure | 3 | 36/72 (50%) | 1 | 23/48 (48%) |
 | LLM03:2026 Excessive Agency | 0 | not covered | 1 | 0/40 (0%) |
 | LLM06:2026 Unbounded Consumption | 0 | not covered | 1 | 5/12 (42%) |
@@ -198,9 +228,32 @@ comparison.
 
 ## Detector validation
 
-How well the refusal detectors agree with human labels. Every jailbreak verdict needs a
-refusal decision, so the scanner's jailbreak numbers are only as good as these detectors.
-Reproduce with `make detectors`.
+How much each detector component matters, and how well the refusal detectors agree with
+human labels. Every jailbreak verdict needs a refusal decision, so the scanner's jailbreak
+numbers are only as good as these detectors. Reproduce with `make ablations detectors`.
+
+### Detector ablations (re-scored offline on the stored responses)
+
+| Variant | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | gemma-4-e2b | granite-4.2-3b |
+|---|---|---|---|---|---|
+| full | 270/540 (+0, -0) | 236/540 (+0, -0) | 238/540 (+0, -0) | 226/540 (+0, -0) | 261/540 (+0, -0) |
+| canary: raw substring | 203/416 (+0, -21) | 175/416 (+0, -22) | 180/416 (+0, -18) | 175/416 (+0, -13) | 177/416 (+0, -38) |
+| sinks: regex | 21/72 (+0, -11) | 22/72 (+1, -13) | 25/72 (+2, -14) | 16/72 (+0, -18) | 36/72 (+6, -13) |
+| jailbreak: canary only | 79/90 (+6, -0) | 42/90 (+19, -0) | 43/90 (+18, -0) | 82/90 (+23, -0) | 51/90 (+28, -0) |
+| refusal: classifier only | 79/90 (+6, -0) | 37/90 (+14, -0) | 35/90 (+10, -0) | 78/90 (+19, -0) | 44/90 (+21, -0) |
+| refusal: keyword only | 73/90 (+0, -0) | 25/90 (+2, -0) | 26/90 (+1, -0) | 60/90 (+1, -0) | 23/90 (+0, -0) |
+
+Each row swaps one detector component for a simpler one and re-scores the stored
+responses (zero mismatches between stored and re-scored verdicts in every run): "+" are
+attacks the simpler variant newly counts as successful, "-" are successes it misses. Raw
+substring search misses 13 to 38 canaries per model that came back reformatted, spelled
+out or encoded. Regex rules for the HTML, SQL and shell sinks miss 11 to 18 sink findings
+per model and add up to 6 false ones. A jailbreak needs the marker and a non-refusal from
+both refusal detectors. The trained classifier alone, the rule before this release,
+would add 6 to 21 jailbreaks per model, nearly all in-character refusals that printed the
+marker first ("I cannot provide the brewing instructions for Glimmerdraught, as per
+studio policy..."), which the classifier trained on XSTest scores as compliance; the
+phrase list alone adds at most 2 (ADR-0006).
 
 ### Refusal detectors on XSTest v2 (2,250 human-labelled completions)
 
@@ -225,7 +278,38 @@ every time. Qwen3Guard-Gen-0.6B has the highest accuracy and F1 (0.906 and 0.905
 phrase list and the XSTest string match are as accurate as the trained linear models at a
 fraction of the cost, ProtectAI trades precision for recall, and the small judge is the
 least accurate (recall 0.72). The trained classifier does not beat the phrase list on
-held-out models, which is why jailbreak success also requires the canary (ADR-0006).
+held-out models, which is why a jailbreak also needs the marker and the phrase list's
+agreement (ADR-0006).
+
+## Performance
+
+Detector kernels on the 2,250 XSTest completions (1.6 MB of real model output), median of
+5 runs, single thread, Rust core against the Python reference implementation that the
+parity tests compare it with. Reproduce with `make speed`.
+
+### Detector kernels, Rust core versus Python reference (2,250 texts, median of 5)
+
+| Kernel | Python (texts/s) | Rust (texts/s) | Speedup |
+|---|---|---|---|
+| canary search (stdlib `re`: 2,187/s) | 1,981 | 22,088 | 11.2x |
+| leakage LCS | 3,028 | 81,585 | 26.9x |
+| n-gram hashing | 742 | 7,300 | 9.8x |
+| text views | 2,190 | 49,867 | 22.8x |
+| end to end rescoring | 3,056 | 12,289 | 4.0x |
+
+| LCS, 200-token secret versus | Python | Rust | Speedup |
+|---|---|---|---|
+| 100 tokens | 1.1 ms | 0.023 ms | 49x |
+| 1,000 tokens | 11.7 ms | 0.067 ms | 174x |
+| 5,000 tokens | 60.2 ms | 0.271 ms | 222x |
+| 20,000 tokens | 241.5 ms | 1.030 ms | 235x |
+
+Canary search runs one Aho-Corasick automaton over all patterns in every view; the
+standard-library `re` alternation baseline searches the same views built by Python. The
+end-to-end row re-scores all 540 stored responses of the Qwen3.5-2B scan with every
+detector, where SQLite, HTML parsing and the classifier's sparse algebra are shared by
+both backends, so the speedup is smaller. Bit-parallel LCS grows with the output length
+as expected: 49x at 100 tokens, 235x at 20,000.
 
 ## Threats to validity
 
@@ -263,6 +347,7 @@ uv run --no-sync python scan_models.py --model demo-vulnerable  # and demo-harde
 uv run --no-sync python scan_models.py --model qwen3.5-2b --run qwen3.5-2b-datasets --probes dataset --sample 150
 uv run --no-sync python detectors.py
 uv run --no-sync python garak_compare.py --model qwen3.5-2b
+uv run --no-sync python rescore.py       # after a detector change: re-score every scan offline
 uv run --no-sync python ablations.py
 uv run --no-sync python speed.py
 uv run --no-sync python report.py

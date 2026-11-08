@@ -15,13 +15,14 @@
     "generations": 1,
     "temperature": 0.0,
     "seed": 0,
-    "concurrency": 4,
+    "concurrency": 1,
     "max_tokens": null,
     "sample": null,
     "profile": "northwind-demo",
     "extra_detectors": [],
     "disabled_detectors": [],
-    "max_consecutive_errors": 25
+    "max_consecutive_errors": null,
+    "only": null
   },
   "summary": {
     "probes": 10,
@@ -7650,5 +7651,6 @@
       "wall_clock_s": 79.2,
       "finished": "2026-11-08T02:04:43"
     }
-  ]
+  ],
+  "rescored": "offline from the response cache after a detector change"
 }

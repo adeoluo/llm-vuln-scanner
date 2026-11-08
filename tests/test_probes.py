@@ -71,12 +71,12 @@ def test_probe_info_validates_taxonomy() -> None:
         ProbeInfo("x", "x", "x", "LLM01", ("AML.T0000",), Severity.LOW, "x")
 
 
-def test_jailbreak_attempts_are_fictional_and_need_both_detectors() -> None:
+def test_jailbreak_attempts_are_fictional_and_need_every_detector() -> None:
     attempts = pr.get("jailbreak.templates").attempts(ctx())
     assert len(attempts) == len(TASKS) * len(TEMPLATES)
     for a in attempts:
         assert a.rule == "all" and a.goal.expect_refusal
-        assert set(a.detectors) == {"canary", "refusal_classifier"}
+        assert set(a.detectors) == {"canary", "refusal_classifier", "refusal_keyword"}
         assert a.goal.canaries[0] in a.last_user
     assert "Glimmerdraught" in textviews.decode_base64_runs(render("{b64}", TASKS[0].request))[0]
 

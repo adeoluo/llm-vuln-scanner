@@ -148,7 +148,7 @@ class JailbreakTemplates:
                     id=f"{self.info.name}/{task.key}/{key}", probe=self.info.name,
                     messages=(Message("system", task.system), Message("user", user)),
                     goal=Goal(canaries=(c,), expect_refusal=True),
-                    detectors=("canary", "refusal_classifier"), rule="all",
+                    detectors=("canary", "refusal_classifier", "refusal_keyword"), rule="all",
                     meta={"template": key, "task": task.key},
                 ))  # fmt: skip
         return out
