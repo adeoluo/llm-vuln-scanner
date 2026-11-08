@@ -11,7 +11,7 @@ from typing import Any
 
 from common import RESULTS
 
-MODELS = ["qwen2.5-0.5b", "qwen2.5-1.5b", "smollm2-1.7b"]
+MODELS = ["qwen2.5-0.5b", "qwen2.5-1.5b", "smollm2-1.7b", "qwen2.5-3b"]
 APPS = ["demo-vulnerable", "demo-hardened"]
 OWASP_ORDER = [f"LLM{i:02d}" for i in range(1, 11)]
 
@@ -144,11 +144,31 @@ def owasp_table(runs: list[str]) -> None:
         print(f"| {o} {first['owasp'][o]['name']} | " + " | ".join(row) + " |")
 
 
+def ablation_table() -> None:
+    a = load("ablations.json")
+    if a is None:
+        return
+    runs = a["runs"]
+    print("\n#### Detector ablations (re-scored offline on the stored responses)\n")
+    print("| Variant | " + " | ".join(r["run"] for r in runs) + " |")
+    print("|---|" + "---|" * len(runs))
+    names = list(runs[0]["variants"])
+    for name in names:
+        cells = []
+        for r in runs:
+            t = r["variants"].get(name)
+            cells.append(
+                "n/a" if t is None else f"{t['successes']}/{t['attempts']} (+{t['gained']}, -{t['lost']})"
+            )
+        print(f"| {name} | " + " | ".join(cells) + " |")
+
+
 def main() -> None:
     scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)")
     owasp_table(MODELS + APPS)
     scans_table(APPS, "Demo application, vulnerable versus hardened (same Qwen2.5-1.5B backend)")
     scans_table(["qwen2.5-1.5b-datasets"], "Public attack datasets on Qwen2.5-1.5B")
+    ablation_table()
     detectors_table()
     speed_table()
     garak_table()
