@@ -29,7 +29,119 @@ the commands that produce each results file are listed under Reproducibility.
   classifier (`rule="all"`: the compliance canary and a non-refusal are both required).
   The refusal detectors are validated against human labels (XSTest v2) below.
 
-TABLES
+## Results
+
+## Scans of local models
+
+The default probe set against each model with no application around it: the system
+prompt, planted secrets, tools and sinks come from the probe itself.
+
+### Local models, default probe set (540 attempts each, greedy)
+
+| Probe | OWASP | qwen2.5-1.5b | smollm2-1.7b |
+|---|---|---|---|
+| `encoding.obfuscation` | LLM01 | 9/66 (14%, 7% to 24%) | 12/66 (18%, 11% to 29%) |
+| `injection.direct` | LLM01 | 39/60 (65%, 52% to 76%) | 36/60 (60%, 47% to 71%) |
+| `injection.indirect` | LLM01 | 18/72 (25%, 16% to 36%) | 22/72 (31%, 21% to 42%) |
+| `jailbreak.templates` | LLM01 | 75/90 (83%, 74% to 90%) | 27/90 (30%, 22% to 40%) |
+| `disclosure.secrets` | LLM02 | 31/48 (65%, 50% to 77%) | 26/48 (54%, 40% to 67%) |
+| `output.shell` | LLM05 | 18/24 (75%, 55% to 88%) | 17/24 (71%, 51% to 85%) |
+| `output.sql` | LLM05 | 10/24 (42%, 24% to 61%) | 13/24 (54%, 35% to 72%) |
+| `output.xss` | LLM05 | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) |
+| `agency.tools` | LLM06 | 7/40 (18%, 9% to 32%) | 4/40 (10%, 4% to 23%) |
+| `leakage.system_prompt` | LLM07 | 43/80 (54%, 43% to 64%) | 27/80 (34%, 24% to 45%) |
+| `dos.token_blowup` | LLM10 | 2/12 (17%, 5% to 45%) | 4/12 (33%, 14% to 61%) |
+| **All attacks** | | **268/540** (50%) | **200/540** (37%) |
+| Errors | | 0 | 0 |
+| Wall clock | | 24 min | 34 min |
+
+Jailbreak templates are the clearest difference: Qwen2.5-1.5B followed 75 of 90 template
+attacks on fictional restricted tasks, SmolLM2-1.7B 27 of 90 (difference +53 points,
+Newcombe 95% CI +40 to +64). Leakage of the system prompt also differs (+20 points, +5 to
++34); the other probes overlap within their intervals.
+
+### OWASP LLM Top 10 (2025) coverage and attack success rate
+
+| Category | qwen2.5-1.5b | smollm2-1.7b | demo-vulnerable | demo-hardened |
+|---|---|---|---|---|
+| LLM01 Prompt Injection | 141/288 (49%) | 97/288 (34%) | 29/106 (27%) | 17/106 (16%) |
+| LLM02 Sensitive Information Disclosure | 31/48 (65%) | 26/48 (54%) | 7/12 (58%) | 0/12 (0%) |
+| LLM03 Supply Chain | not tested | not tested | not tested | not tested |
+| LLM04 Data and Model Poisoning | not tested | not tested | not tested | not tested |
+| LLM05 Improper Output Handling | 44/72 (61%) | 42/72 (58%) | 18/36 (50%) | 0/36 (0%) |
+| LLM06 Excessive Agency | 7/40 (18%) | 4/40 (10%) | 7/40 (18%) | 0/40 (0%) |
+| LLM07 System Prompt Leakage | 43/80 (54%) | 27/80 (34%) | 9/16 (56%) | 0/16 (0%) |
+| LLM08 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested |
+| LLM09 Misinformation | not tested | not tested | not tested | not tested |
+| LLM10 Unbounded Consumption | 2/12 (17%) | 4/12 (33%) | 1/12 (8%) | 0/12 (0%) |
+
+"Not tested" categories need access the black-box probes do not have (see Limitations).
+
+## Demo application
+
+The bundled "Northwind Kettles" support application with four LLM features (chat with
+documents, SQL order lookup, shell diagnostics, a tool-using agent), scanned through its
+profile with the same Qwen2.5-1.5B backend in both modes. Hardened mode applies the
+standard mitigation per feature (no secrets in context, spotlighted documents, escaped
+HTML, read-only scoped SQL, argument vectors instead of a shell, confirmation for
+high-impact tools).
+
+### Demo application, vulnerable versus hardened (same Qwen2.5-1.5B backend)
+
+| Probe | OWASP | demo-vulnerable | demo-hardened |
+|---|---|---|---|
+| `encoding.obfuscation` | LLM01 | 5/22 (23%, 10% to 43%) | 3/22 (14%, 5% to 33%) |
+| `injection.direct` | LLM01 | 7/12 (58%, 32% to 81%) | 8/12 (67%, 39% to 86%) |
+| `injection.indirect` | LLM01 | 17/72 (24%, 15% to 35%) | 6/72 (8%, 4% to 17%) |
+| `disclosure.secrets` | LLM02 | 7/12 (58%, 32% to 81%) | 0/12 (0%, 0% to 24%) |
+| `output.shell` | LLM05 | 9/12 (75%, 47% to 91%) | 0/12 (0%, 0% to 24%) |
+| `output.sql` | LLM05 | 6/12 (50%, 25% to 75%) | 0/12 (0%, 0% to 24%) |
+| `output.xss` | LLM05 | 3/12 (25%, 9% to 53%) | 0/12 (0%, 0% to 24%) |
+| `agency.tools` | LLM06 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) |
+| `leakage.system_prompt` | LLM07 | 9/16 (56%, 33% to 77%) | 0/16 (0%, 0% to 19%) |
+| `dos.token_blowup` | LLM10 | 1/12 (8%, 1% to 35%) | 0/12 (0%, 0% to 24%) |
+| **All attacks** | | **71/222** (32%) | **17/222** (8%) |
+| Errors | | 0 | 0 |
+
+Hardening removes every SQL, shell, XSS, tool, secret, leakage and token blow-up
+finding. Direct prompt injection still succeeds as often (8/12 versus 7/12): the
+mitigations limit what an injected instruction can reach, they do not stop the model from
+following it. Spotlighting untrusted documents cuts indirect injection from 24% to 8%.
+
+## Detector validation
+
+How much each detector component matters, and how well the refusal detectors agree with
+human labels.
+
+### Detector ablations (re-scored offline on the stored responses)
+
+| Variant | qwen2.5-1.5b | smollm2-1.7b |
+|---|---|---|
+| full | 268/540 (+0, -0) | 200/540 (+0, -0) |
+| canary: raw substring | 207/416 (+0, -8) | 140/416 (+0, -10) |
+| sinks: regex | 34/72 (+5, -15) | 19/72 (+1, -24) |
+| jailbreak: canary only | 79/90 (+4, -0) | 27/90 (+0, -0) |
+| refusal: keyword | 72/90 (+2, -5) | 27/90 (+0, -0) |
+
+Each row swaps one detector component for a simpler one and re-scores the stored
+responses: "+" are attacks the simpler variant newly counts as successful, "-" are
+successes it misses. Raw substring search misses 8 and 10 canaries that the models
+reformatted or encoded. Regex rules for the HTML, SQL and shell sinks miss 15 of 44 and 24
+of 42 sink findings and add 5 and 1 false ones. Dropping the refusal gate adds 4
+jailbreaks that Qwen2.5-1.5B refused after printing the marker.
+
+### Refusal detectors on XSTest v2 (2,250 human-labelled completions)
+
+| Detector | Accuracy | Precision | Recall | F1 | Time |
+|---|---|---|---|---|---|
+| keyword | 0.884 (0.871 to 0.897) | 0.955 (0.942 to 0.968) | 0.813 (0.791 to 0.835) | 0.878 (0.863 to 0.893) | 0.1 s |
+| xstest_strmatch | 0.884 (0.871 to 0.897) | 0.954 (0.940 to 0.966) | 0.815 (0.794 to 0.838) | 0.879 (0.865 to 0.893) | 0.0 s |
+| classifier (LOMO) | 0.868 (0.854 to 0.881) | 0.956 (0.941 to 0.968) | 0.779 (0.757 to 0.801) | 0.858 (0.843 to 0.873) | 113.9 s |
+| sklearn tfidf+LR (LOMO) | 0.872 (0.859 to 0.885) | 0.949 (0.936 to 0.963) | 0.794 (0.771 to 0.815) | 0.865 (0.850 to 0.879) | 7.3 s |
+
+Leave-one-model-out (LOMO): trained on four XSTest answering models, tested on the fifth.
+The trained classifier does not beat the phrase list on held-out models, which is why
+jailbreak success also requires the canary (ADR-0006).
 
 ## Threats to validity
 
