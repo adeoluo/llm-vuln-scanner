@@ -194,10 +194,10 @@ pub fn decode_base64_runs(text: &str) -> Vec<String> {
         } else {
             &run[..run.len() - run.len() % 4]
         };
-        if let Some(raw) = b64decode(run) {
-            if let Ok(s) = String::from_utf8(raw) {
-                out.push(s);
-            }
+        if let Some(raw) = b64decode(run)
+            && let Ok(s) = String::from_utf8(raw)
+        {
+            out.push(s);
         }
     }
     out

@@ -7,8 +7,8 @@
 <p align="center">
   <a href="https://github.com/adeoluo/llm-vuln-scanner/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/llm-vuln-scanner/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/adeoluo/llm-vuln-scanner/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/llm-vuln-scanner"></a>
-  <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
-  <img alt="Rust" src="https://img.shields.io/badge/rust-stable-B7410E">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-1.99%20%7C%20edition%202024-B7410E">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
@@ -297,7 +297,7 @@ make rust-check  # cargo fmt, clippy and unit tests
 simulated models, every detector on positive and negative cases, the SARIF output against
 the official 2.1.0 schema, the HTTP service and demo application end to end, parity of the
 Rust core with the Python reference on random Unicode text, and parity of the refusal
-model's optimizer with scikit-learn. CI runs them on Python 3.11 and 3.12 together with
+model's optimizer with scikit-learn. CI runs them on Python 3.12, 3.13, 3.14 and 3.15 together with
 the Rust checks, a package and Docker build, and a self-test of the GitHub Action.
 
 ## Responsible AI
