@@ -1,10 +1,27 @@
 cff-version: 1.2.0
-message: "If you use this work, please cite it."
-title: "Llm Vuln Scanner"
+message: "If you use this software, please cite it as below."
+type: software
+title: "LLM Vuln Scanner"
+abstract: >-
+  An automated vulnerability scanner for LLM applications. Probes for prompt injection,
+  hidden context exposure, sensitive information disclosure, improper output handling,
+  excessive agency, encoding attacks, jailbreak templates on fictional canary tasks and
+  token blow-up are scored with canary, sink emulation and refusal detectors, and findings
+  are mapped to the OWASP Top 10 for LLM Applications 2026, the OWASP Top 10 for Agentic
+  Applications 2026 and MITRE ATLAS v2026.10, with JSON, HTML, SARIF and JUnit reports.
 authors:
   - family-names: "Ogunnoiki"
     given-names: "Adeolu"
 version: 0.1.0
-date-released: 2026-01-01
+date-released: 2026-11-08
 license: MIT
-url: "REPO_URL"
+repository-code: "https://github.com/adeoluo/llm-vuln-scanner"
+url: "https://github.com/adeoluo/llm-vuln-scanner"
+keywords:
+  - llm-security
+  - owasp-llm-top-10-2026
+  - owasp-agentic-top-10-2026
+  - mitre-atlas
+  - prompt-injection
+  - red-teaming
+  - sarif
