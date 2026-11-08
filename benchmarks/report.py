@@ -12,6 +12,8 @@ from typing import Any
 from common import MODELS as LOCAL_MODELS
 from common import PRIMARY, RESULTS
 
+from llm_vuln_scanner.report import upgrade_report
+
 MODELS = list(LOCAL_MODELS)
 APPS = ["demo-vulnerable", "demo-hardened"]
 OWASP_ORDER = [f"LLM{i:02d}" for i in range(1, 11)]
@@ -19,7 +21,11 @@ OWASP_ORDER = [f"LLM{i:02d}" for i in range(1, 11)]
 
 def load(name: str) -> dict[str, Any] | None:
     p = RESULTS / name
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    if not p.exists():
+        return None
+    data: dict[str, Any] = json.loads(p.read_text(encoding="utf-8"))
+    # Scan reports always print with the current taxonomy (OWASP 2026, ATLAS v2026.10).
+    return upgrade_report(data) if name.startswith("scans/") else data
 
 
 def cell(f: dict[str, Any] | None) -> str:
@@ -63,6 +69,23 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
             )
             + " |"
         )
+
+
+def models_table() -> None:
+    rows = [(k, load(f"scans/{k}.json")) for k in MODELS]
+    rows = [(k, r) for k, r in rows if r is not None]
+    if not rows:
+        return
+    print("\n#### Models scanned (llama.cpp, greedy, 4 parallel slots of 4,096 tokens)\n")
+    print("| Key | Model | Released | GGUF build | Quantization | Mean output tokens | Scan time |")
+    print("|---|---|---|---|---|---|---|")
+    for k, r in rows:
+        m = LOCAL_MODELS[k]
+        toks = [a["completion_tokens"] or 0 for a in r["attempts"]]
+        print(f"| {k} | [{m.model_id}](https://huggingface.co/{m.model_id}) | {m.released} | "
+              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | "
+              f"{sum(toks) / max(1, len(toks)):.0f} | {r.get('generation_wall_clock_s', 0) / 60:.0f} min |")  # fmt: skip
+    print(f"\nServer: {rows[0][1].get('llama_cpp', 'llama.cpp')}.")
 
 
 def detectors_table() -> None:
@@ -178,6 +201,7 @@ def ablation_table() -> None:
 
 
 def main() -> None:
+    models_table()
     scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)")
     owasp_table(MODELS + APPS)
     label = LOCAL_MODELS[PRIMARY].label
