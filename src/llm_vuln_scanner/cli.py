@@ -14,7 +14,7 @@ from llm_vuln_scanner import __version__, _backend
 from llm_vuln_scanner import detectors as det
 from llm_vuln_scanner import probes as pr
 from llm_vuln_scanner.canary import CanaryFactory
-from llm_vuln_scanner.engine import ScanConfig, Scanner
+from llm_vuln_scanner.engine import ScanAbortedError, ScanConfig, Scanner
 from llm_vuln_scanner.probes.base import ProbeContext, load_profile
 from llm_vuln_scanner.report import EXTENSIONS, RENDERERS, github_annotations
 from llm_vuln_scanner.report.sarif import render_sarif
@@ -77,11 +77,16 @@ def cmd_scan(a: argparse.Namespace) -> int:
         concurrency=a.concurrency, max_tokens=a.max_tokens, sample=a.sample,
         cache_path=Path(a.cache) if a.cache else None, data_dir=Path(a.data_dir) if a.data_dir else None,
         profile=profile, extra_detectors=extra, disabled_detectors=disabled,
+        max_consecutive_errors=a.max_consecutive_errors or None,
     )  # fmt: skip
     with ExitStack() as stack:
         target = open_target(a.target, stack, api_key_env=a.api_key_env, parallel=a.concurrency)
         judge = open_target(a.judge, stack, parallel=1) if a.judge else None
-        report = Scanner(target, cfg, judge=judge, progress=_progress(a.quiet)).run().to_dict()
+        try:
+            report = Scanner(target, cfg, judge=judge, progress=_progress(a.quiet)).run().to_dict()
+        except ScanAbortedError as exc:
+            print(f"scan aborted: {exc}", file=sys.stderr)
+            return 2
     name = a.name or "scan"
     paths = write_reports(
         report, Path(a.out), _csv(a.format), name, a.sarif_artifact or (a.profile or "llm-app")
@@ -224,6 +229,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--max-tokens", type=int, default=None, help="override every attempt's token budget")
     s.add_argument("--sample", type=int, default=None, help="at most N attempts per probe (seeded)")
     s.add_argument("--cache", default=None, help="JSONL response cache (resumable scans)")
+    s.add_argument("--max-consecutive-errors", type=int, default=25,
+                   help="abort when the target fails this many times in a row (0 never aborts)")  # fmt: skip
     s.add_argument("--data-dir", default=None, help="prepared datasets for dataset.* probes")
     s.add_argument("--profile", default=None, help="application profile JSON (app targets)")
     s.add_argument("--judge", default=None, help="target spec of an LLM judge (adds the judge detector)")
