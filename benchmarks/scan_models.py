@@ -119,6 +119,7 @@ def main() -> None:
     cached_after = sum(1 for _ in cache.open(encoding="utf-8")) if cache.exists() else 0
     if cached_after > cached_before:
         timing["chunks"].append({"probes": args.probes, "new_responses": cached_after - cached_before,
+                                 "slots": cfg.concurrency,
                                  "wall_clock_s": wall, "finished": time.strftime("%Y-%m-%dT%H:%M:%S")})  # fmt: skip
         timing_path.write_text(json.dumps(timing, indent=1) + "\n", encoding="utf-8")
     report["generation_wall_clock_s"] = round(sum(c["wall_clock_s"] for c in timing["chunks"]), 1)

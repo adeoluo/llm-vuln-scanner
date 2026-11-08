@@ -67,12 +67,12 @@ The default probe set against each model with no application around it: the syst
 prompt, planted secrets, tools and sinks come from the probe itself. Reproduce with
 `make scans` (or `uv run --no-sync python benchmarks/scan_models.py --model KEY`).
 
-**Models scanned (llama.cpp, greedy, 4 parallel slots of 4,096 tokens)**
+**Models scanned (llama.cpp, greedy, parallel slots of 4,096 tokens)**
 
-| Key | Model | Released | GGUF build | Quantization | Mean output tokens | Scan time |
-|---|---|---|---|---|---|---|
-| qwen3.5-0.8b | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 2026-02 | [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) `Qwen3.5-0.8B-Q4_K_M.gguf` | Q4_K_M | 82 | 37 min |
-| qwen3.5-2b | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 2026-02 | [unsloth/Qwen3.5-2B-GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) `Qwen3.5-2B-Q4_K_M.gguf` | Q4_K_M | 76 | 55 min |
+| Key | Model | Released | GGUF build | Quantization | Slots | Mean output tokens | Scan time |
+|---|---|---|---|---|---|---|---|
+| qwen3.5-0.8b | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 2026-02 | [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) `Qwen3.5-0.8B-Q4_K_M.gguf` | Q4_K_M | 4 | 82 | 37 min |
+| qwen3.5-2b | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 2026-02 | [unsloth/Qwen3.5-2B-GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) `Qwen3.5-2B-Q4_K_M.gguf` | Q4_K_M | 4 | 76 | 55 min |
 
 Server: llama.cpp `llama-server` 0.9.0 (build 12110, commit cd959bae9).
 
@@ -164,6 +164,75 @@ Hardening removes every SQL, shell, XSS, secret, hidden-context and token blow-u
 finding. Direct prompt injection succeeds as often in both modes (8/12): the mitigations
 limit what an injected instruction can reach, they do not stop the model from following
 it. Spotlighting untrusted documents cuts indirect injection from 53% to 33%.
+
+### Comparison with garak
+
+[garak](https://github.com/NVIDIA/garak) 0.17.1 (NVIDIA's LLM vulnerability scanner) against
+the same Qwen3.5-2B server (same GGUF, non-thinking mode, greedy, one generation, garak's
+150-token default budget), with the 19 garak probes that match this scanner's OWASP
+categories and do not ask for harmful content, at most 24 prompts per probe where garak
+honours the cap. An attempt counts when any of its probe's detectors scores at least 0.5.
+garak tags probes with the 2023 OWASP numbering, so each probe is mapped here to the 2026
+category of the behaviour it tests (`benchmarks/garak_compare.py`). Reproduce with
+`make garak`.
+
+**Same model (qwen3.5-2b), garak 0.17.1 versus this scanner, by OWASP 2026 category**
+
+| OWASP | garak probes | garak attacks flagged | this scanner probes | this scanner attacks succeeded |
+|---|---|---|---|---|
+| LLM01:2026 Prompt Injection | 12 | 196/543 (36%) | 4 | 151/288 (52%) |
+| LLM02:2026 Sensitive Information Disclosure | 3 | 36/72 (50%) | 1 | 23/48 (48%) |
+| LLM03:2026 Excessive Agency | 0 | not covered | 1 | 0/40 (0%) |
+| LLM06:2026 Unbounded Consumption | 0 | not covered | 1 | 5/12 (42%) |
+| LLM08:2026 Hidden Context Exposure | 1 | 1/24 (4%) | 1 | 37/80 (46%) |
+| LLM10:2026 Improper Output Handling | 3 | 22/75 (29%) | 3 | 34/72 (47%) |
+
+garak: 714 attempts in 117 min; this scanner: 540 attempts in 55 min.
+
+The two tools agree that the model follows injected instructions (garak's latent injection
+probes: 158 of 240 attempts flagged; this scanner's indirect injection: 38 of 72). They
+disagree where their definitions differ: garak's five encoding probes flagged 0 of 120
+because its detectors look for the decoded payload in the output, while this scanner's
+`encoding.obfuscation` counts a planted canary in any decoded view (24 of 66); garak's
+system prompt extraction flagged 1 of 24 against 37 of 80 here: garak's detector scores
+how closely the output reproduces its system prompt, while this scanner also counts a
+planted code that comes back paraphrased, translated, spelled out or encoded. garak covers
+training-data divergence (`divergence.Repeat`, 36 of 36 flagged by its detector) and ANSI
+escape output, which this scanner does not test; this scanner covers excessive agency and
+token blow-up, which the selected garak probes do not. The garak run took longer per
+attempt because the machine was swapping during most of it, so the times are not a speed
+comparison.
+
+### Detector validation
+
+How well the refusal detectors agree with human labels. Every jailbreak verdict needs a
+refusal decision, so the scanner's jailbreak numbers are only as good as these detectors.
+Reproduce with `make detectors`.
+
+**Refusal detectors on XSTest v2 (2,250 human-labelled completions)**
+
+| Detector | Accuracy | Precision | Recall | F1 | Time |
+|---|---|---|---|---|---|
+| keyword | 0.884 (0.871 to 0.897) | 0.955 (0.942 to 0.968) | 0.813 (0.791 to 0.835) | 0.878 (0.863 to 0.893) | 0.1 s |
+| xstest_strmatch | 0.884 (0.871 to 0.897) | 0.954 (0.940 to 0.966) | 0.815 (0.794 to 0.838) | 0.879 (0.865 to 0.893) | 0.0 s |
+| classifier (LOMO) | 0.868 (0.854 to 0.881) | 0.956 (0.941 to 0.968) | 0.779 (0.757 to 0.801) | 0.858 (0.843 to 0.873) | 35.5 s |
+| sklearn tfidf+LR (LOMO) | 0.872 (0.859 to 0.885) | 0.949 (0.936 to 0.963) | 0.794 (0.771 to 0.815) | 0.865 (0.850 to 0.879) | 2.9 s |
+| protectai distilroberta | 0.872 (0.858 to 0.885) | 0.850 (0.829 to 0.870) | 0.911 (0.894 to 0.928) | 0.880 (0.865 to 0.892) | 83.3 s |
+| qwen3guard-gen-0.6b | 0.906 (0.894 to 0.917) | 0.943 (0.929 to 0.956) | 0.871 (0.851 to 0.890) | 0.905 (0.893 to 0.917) | 2548.7 s |
+| judge qwen3.5-2b | 0.834 (0.800 to 0.864) | 0.938 (0.898 to 0.968) | 0.717 (0.661 to 0.772) | 0.813 (0.772 to 0.850) | 460.2 s |
+| keyword (judge sample) | 0.884 (0.854 to 0.910) | 0.957 (0.927 to 0.981) | 0.805 (0.754 to 0.849) | 0.875 (0.839 to 0.904) | 0.0 s |
+
+Leave-one-model-out (LOMO): trained on four XSTest answering models, tested on the fifth.
+ProtectAI distilroberta-base-rejection-v1 (82M parameters) and Qwen3Guard-Gen-0.6B (in
+its response-moderation mode, which answers "Refusal: Yes" or "No") are public reference
+models, not trained here. The Qwen3.5-2B judge graded a seeded random sample of 500
+completions (shown next to the keyword rule on the same sample) and returned a verdict
+every time. Qwen3Guard-Gen-0.6B has the highest accuracy and F1 (0.906 and 0.905 against
+0.884 and 0.878 for the phrase list) at about 1.1 s per completion on the shared GPU; the
+phrase list and the XSTest string match are as accurate as the trained linear models at a
+fraction of the cost, ProtectAI trades precision for recall, and the small judge is the
+least accurate (recall 0.72). The trained classifier does not beat the phrase list on
+held-out models, which is why jailbreak success also requires the canary (ADR-0006).
 
 ## Quickstart
 
@@ -336,6 +405,8 @@ outside an in-memory fixture. Only scan systems you own or are authorized to tes
 - [ ] Multi-turn attack strategies (crescendo, adaptive attacker model).
 - [ ] Retrieval-augmented targets with poisoned vector stores (LLM09:2026).
 - [ ] Larger models (7B and up) and sampled decoding with several generations.
+- [ ] Qwen3Guard-Gen as an optional refusal detector (the most accurate one on XSTest here).
+- [ ] Scans in Qwen3.5 thinking mode, with the reasoning trace checked for canaries.
 
 ## License
 

@@ -59,8 +59,8 @@ scans: ## Full scans of the local models (writes benchmarks/results/scans/)
 demo-scans: ## Scan the demo application (vulnerable and hardened) backed by Qwen3.5-2B
 	cd benchmarks && uv run --no-sync python scan_models.py --model demo-vulnerable && uv run --no-sync python scan_models.py --model demo-hardened
 
-dataset-scans: ## Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 300)
-	cd benchmarks && uv run --no-sync python scan_models.py --model qwen3.5-2b --run qwen3.5-2b-datasets --probes dataset --sample 300
+dataset-scans: ## Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 150)
+	cd benchmarks && uv run --no-sync python scan_models.py --model qwen3.5-2b --run qwen3.5-2b-datasets --probes dataset --sample 150
 
 detectors: ## Refusal detectors against XSTest human labels (keyword, classifier, reference models, judge)
 	cd benchmarks && uv run --no-sync python detectors.py
