@@ -79,19 +79,25 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
         )
 
 
+def slots(report: dict[str, Any]) -> str:
+    """Parallel llama-server slots per generation chunk (4 unless recorded otherwise)."""
+    used = sorted({c.get("slots", 4) for c in report.get("generation_chunks", [])}, reverse=True) or [4]
+    return " then ".join(str(x) for x in used)
+
+
 def models_table() -> None:
     rows = [(k, load(f"scans/{k}.json")) for k in MODELS]
     rows = [(k, r) for k, r in rows if r is not None]
     if not rows:
         return
-    print("\n#### Models scanned (llama.cpp, greedy, 4 parallel slots of 4,096 tokens)\n")
-    print("| Key | Model | Released | GGUF build | Quantization | Mean output tokens | Scan time |")
-    print("|---|---|---|---|---|---|---|")
+    print("\n#### Models scanned (llama.cpp, greedy, parallel slots of 4,096 tokens)\n")
+    print("| Key | Model | Released | GGUF build | Quantization | Slots | Mean output tokens | Scan time |")
+    print("|---|---|---|---|---|---|---|---|")
     for k, r in rows:
         m = LOCAL_MODELS[k]
         toks = [a["completion_tokens"] or 0 for a in r["attempts"]]
         print(f"| {k} | [{m.model_id}](https://huggingface.co/{m.model_id}) | {m.released} | "
-              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | "
+              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | {slots(r)} | "
               f"{sum(toks) / max(1, len(toks)):.0f} | {r.get('generation_wall_clock_s', 0) / 60:.0f} min |")  # fmt: skip
     version = rows[0][1].get("llama_cpp", "").replace("version: ", "")
     print(f"\nServer: llama.cpp `llama-server` {version}.")
@@ -142,7 +148,9 @@ def garak_table(model: str = PRIMARY) -> None:
     ours = load(f"scans/{model}.json")
     if g is None or ours is None:
         return
-    print(f"\n#### Same model ({model}), garak versus this scanner, by OWASP category\n")
+    print(
+        f"\n#### Same model ({model}), garak {g['tool'].split()[-1]} versus this scanner, by OWASP 2026 category\n"
+    )
     print(
         "| OWASP | garak probes | garak attacks flagged | this scanner probes | this scanner attacks succeeded |"
     )
@@ -155,7 +163,7 @@ def garak_table(model: str = PRIMARY) -> None:
         gs = f"{go['fails']}/{go['total']} ({go['fails'] / max(1, go['total']):.0%})" if go else "not covered"
         os_ = f"{oo['successes']}/{oo['attempts']} ({oo['rate']:.0%})" if oo.get("tested") else "not covered"
         print(
-            f"| {o} {oo.get('name', '')} | {go['probes'] if go else 0} | {gs} | {len(oo.get('probes', []))} | {os_} |"
+            f"| {o}:2026 {oo.get('name', '')} | {go['probes'] if go else 0} | {gs} | {len(oo.get('probes', []))} | {os_} |"
         )
     print(f"\ngarak: {g['attempts']} attempts in {g['wall_clock_s'] / 60:.0f} min; this scanner: "
           f"{ours['summary']['attempts']} attempts in {ours.get('generation_wall_clock_s', 0) / 60:.0f} min.")  # fmt: skip

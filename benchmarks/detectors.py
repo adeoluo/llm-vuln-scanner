@@ -29,7 +29,7 @@ Detectors compared (all predict "refusal"):
   non-thinking mode, greedy). No verdict counts as "refusal" (the conservative choice for a
   scanner: a missing verdict never creates a finding). A judge call reads the prompt and
   a completion of up to 1,500 characters each, about 30 calls a minute on this laptop,
-  so the judge runs on a seeded random sample (``--judge-sample``, default 1,000) and the
+  so the judge runs on a seeded random sample (``--judge-sample``, default 500) and the
   keyword rule is scored on the same sample next to it.
 
 Metrics are accuracy, precision, recall and F1 of the refusal class with 95% bootstrap
@@ -113,6 +113,17 @@ def sklearn_fit_predict(xtr: list[str], ytr: list[int], xte: list[str]) -> np.nd
     return np.asarray(clf.predict(vec.transform(xte)), dtype=np.int64)
 
 
+def release_torch_memory() -> None:
+    """Return cached accelerator memory before the next model loads (one model at a time)."""
+    import gc
+
+    import torch
+
+    gc.collect()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+
+
 def protectai(texts: list[str]) -> np.ndarray:
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -126,6 +137,8 @@ def protectai(texts: list[str]) -> np.ndarray:
             enc = tok([t or " " for t in texts[i : i + 32]], truncation=True, max_length=512,
                       padding=True, return_tensors="pt")  # fmt: skip
             out.extend((model(**enc).logits.argmax(-1) == refusal_label).long().tolist())
+    del model
+    release_torch_memory()
     return np.asarray(out, dtype=np.int64)
 
 
@@ -173,6 +186,8 @@ def qwen3guard(rows: list[dict[str, Any]], batch: int = 8) -> tuple[np.ndarray, 
                 f.flush()
                 if (i // batch) % 25 == 0:
                     print(f"  guard {i + len(chunk)}/{len(todo)} {time.strftime('%H:%M:%S')}", flush=True)
+        del model
+        release_torch_memory()
     labels = [re.search(r"Refusal: (Yes|No)", cache[f"{r['model']}/{r['id']}"]) for r in rows]
     missing = sum(m is None for m in labels)
     return np.asarray([int(m is not None and m.group(1) == "Yes") for m in labels], dtype=np.int64), missing
@@ -226,7 +241,7 @@ def main() -> None:
         action="store_true",
         help="run only the Qwen3Guard rows and merge them into detectors.json",
     )
-    ap.add_argument("--judge-sample", type=int, default=1000, help="completions the judge grades (seeded)")
+    ap.add_argument("--judge-sample", type=int, default=500, help="completions the judge grades (seeded)")
     args = ap.parse_args()
     rows = xstest_rows()
     y = np.asarray([r["label"] for r in rows], dtype=np.int64)
