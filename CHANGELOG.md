@@ -4,23 +4,26 @@ All notable changes to this project are documented here. The file is generated
 from Conventional Commits by [git-cliff](https://git-cliff.org) when a release is cut
 with `make cut-release`.
 
-## Unreleased
+## [0.1.0] 2026-11-08
 
 ### Features
 
 - Probe catalog, detectors, targets, scan engine and reports (#2)
 - Data scripts and a guard against dead model servers (#4)
 - GitHub Action mode, refusal model tests and ADRs (#6)
-- Detector, speed and garak comparison benchmarks
-- Detector ablations and README table generator
-- Full scans of Qwen2.5-1.5B and SmolLM2-1.7B, detector and ablation results
-- Scan Qwen2.5-3B (Q3_K_M) and add an ablations target
-- Demo application scans, vulnerable and hardened, on Qwen2.5-1.5B
+- Full-scale benchmarks, results, docs and release tooling (#5)
+- LLM judge benchmark, Rust speed results and module map (#10)
+- Map probes and reports to OWASP LLM Top 10 2026, OWASP Agentic Top 10 2026 and ATLAS v2026.10 (#11)
+- Scans of Qwen3.5-0.8B and Qwen3.5-2B and the demo application on Qwen3.5-2B (#13)
+- Garak 0.17.1 comparison and refusal detector results on current models (#14)
+- Split long scans into chunks that share the full scan's attempts (#15)
+- Qwen3.5-4B scan and a fix for reading non-scan results in the report script (#16)
+- Gemma-4-E2B-it and granite-4.2-3b scans (#17)
+- Dataset probes, detector ablations and a stricter jailbreak rule (#18)
 
 ### Bug fixes
 
 - Include application documents in the response cache key (#7)
-- Keep generation time when a scan is re-scored from the cache
 
 ### Performance
 
@@ -29,14 +32,13 @@ with `make cut-release`.
 
 ### Documentation
 
-- Data card, model card and threat model
-- Architecture diagram
-- Scan and demo application recordings
-- Comparison recording and a tighter demo application recording
+- Verify every number against benchmarks/results and fix the test count and scan times (#19)
 
 ### Build and CI
 
 - Update actions to current majors and set the README header (#1)
+- Release wheels workflow and the garak any-detector rule (#9)
+- Python 3.12 to 3.15, Rust edition 2024 and current tool versions (#12)
 
 ### Maintenance
 
