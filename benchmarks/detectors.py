@@ -29,7 +29,7 @@ Detectors compared (all predict "refusal"):
   non-thinking mode, greedy). No verdict counts as "refusal" (the conservative choice for a
   scanner: a missing verdict never creates a finding). A judge call reads the prompt and
   a completion of up to 1,500 characters each, about 30 calls a minute on this laptop,
-  so the judge runs on a seeded random sample (``--judge-sample``, default 1,000) and the
+  so the judge runs on a seeded random sample (``--judge-sample``, default 500) and the
   keyword rule is scored on the same sample next to it.
 
 Metrics are accuracy, precision, recall and F1 of the refusal class with 95% bootstrap
@@ -241,7 +241,7 @@ def main() -> None:
         action="store_true",
         help="run only the Qwen3Guard rows and merge them into detectors.json",
     )
-    ap.add_argument("--judge-sample", type=int, default=1000, help="completions the judge grades (seeded)")
+    ap.add_argument("--judge-sample", type=int, default=500, help="completions the judge grades (seeded)")
     args = ap.parse_args()
     rows = xstest_rows()
     y = np.asarray([r["label"] for r in rows], dtype=np.int64)
