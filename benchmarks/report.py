@@ -148,7 +148,9 @@ def garak_table(model: str = PRIMARY) -> None:
     ours = load(f"scans/{model}.json")
     if g is None or ours is None:
         return
-    print(f"\n#### Same model ({model}), garak versus this scanner, by OWASP category\n")
+    print(
+        f"\n#### Same model ({model}), garak {g['tool'].split()[-1]} versus this scanner, by OWASP 2026 category\n"
+    )
     print(
         "| OWASP | garak probes | garak attacks flagged | this scanner probes | this scanner attacks succeeded |"
     )
@@ -161,7 +163,7 @@ def garak_table(model: str = PRIMARY) -> None:
         gs = f"{go['fails']}/{go['total']} ({go['fails'] / max(1, go['total']):.0%})" if go else "not covered"
         os_ = f"{oo['successes']}/{oo['attempts']} ({oo['rate']:.0%})" if oo.get("tested") else "not covered"
         print(
-            f"| {o} {oo.get('name', '')} | {go['probes'] if go else 0} | {gs} | {len(oo.get('probes', []))} | {os_} |"
+            f"| {o}:2026 {oo.get('name', '')} | {go['probes'] if go else 0} | {gs} | {len(oo.get('probes', []))} | {os_} |"
         )
     print(f"\ngarak: {g['attempts']} attempts in {g['wall_clock_s'] / 60:.0f} min; this scanner: "
           f"{ours['summary']['attempts']} attempts in {ours.get('generation_wall_clock_s', 0) / 60:.0f} min.")  # fmt: skip
