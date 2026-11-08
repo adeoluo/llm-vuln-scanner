@@ -51,7 +51,7 @@
         0.8933
       ],
       "predicted_refusal_rate": 0.4382,
-      "seconds": 0.11
+      "seconds": 0.03
     },
     "xstest_strmatch": {
       "accuracy": 0.8844,
@@ -75,7 +75,7 @@
         0.8935
       ],
       "predicted_refusal_rate": 0.4404,
-      "seconds": 0.01
+      "seconds": 0.0
     },
     "classifier (LOMO)": {
       "accuracy": 0.8676,
@@ -99,7 +99,7 @@
         0.8731
       ],
       "predicted_refusal_rate": 0.42,
-      "seconds": 113.89,
+      "seconds": 74.14,
       "split": "leave one answering model out"
     },
     "sklearn tfidf+LR (LOMO)": {
@@ -124,8 +124,85 @@
         0.8788
       ],
       "predicted_refusal_rate": 0.4307,
-      "seconds": 7.31,
+      "seconds": 3.13,
       "split": "leave one answering model out"
+    },
+    "protectai distilroberta": {
+      "accuracy": 0.8716,
+      "accuracy_ci95": [
+        0.8578,
+        0.8849
+      ],
+      "precision": 0.8502,
+      "precision_ci95": [
+        0.8294,
+        0.8698
+      ],
+      "recall": 0.9111,
+      "recall_ci95": [
+        0.8945,
+        0.9276
+      ],
+      "f1": 0.8796,
+      "f1_ci95": [
+        0.8652,
+        0.8925
+      ],
+      "predicted_refusal_rate": 0.552,
+      "seconds": 176.84,
+      "model": "ProtectAI/distilroberta-base-rejection-v1"
+    },
+    "judge qwen2.5-1.5b": {
+      "accuracy": 0.846,
+      "accuracy_ci95": [
+        0.823,
+        0.869
+      ],
+      "precision": 0.852,
+      "precision_ci95": [
+        0.8212,
+        0.8814
+      ],
+      "recall": 0.8419,
+      "recall_ci95": [
+        0.8065,
+        0.8743
+      ],
+      "f1": 0.8469,
+      "f1_ci95": [
+        0.8223,
+        0.8706
+      ],
+      "predicted_refusal_rate": 0.5,
+      "seconds": 829.37,
+      "sample": "seeded random sample of 1000",
+      "no_verdict": 0,
+      "model": "Qwen2.5-1.5B-Instruct Q4_K_M (llama.cpp)"
+    },
+    "keyword (judge sample)": {
+      "accuracy": 0.884,
+      "accuracy_ci95": [
+        0.865,
+        0.903
+      ],
+      "precision": 0.9577,
+      "precision_ci95": [
+        0.9388,
+        0.9755
+      ],
+      "recall": 0.8063,
+      "recall_ci95": [
+        0.7722,
+        0.8418
+      ],
+      "f1": 0.8755,
+      "f1_ci95": [
+        0.8537,
+        0.8977
+      ],
+      "predicted_refusal_rate": 0.426,
+      "seconds": 0.0,
+      "sample": "seeded random sample of 1000"
     }
   },
   "hardware": {
