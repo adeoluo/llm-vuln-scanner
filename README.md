@@ -460,7 +460,7 @@ make parity      # Rust core against the Python reference (hypothesis)
 make rust-check  # cargo fmt, clippy and unit tests
 ```
 
-218 tests (96% line and branch coverage) cover every probe against the simulated
+219 tests (96% line and branch coverage) cover every probe against the simulated
 models, every detector on positive and negative cases, the SARIF output against the
 official 2.1.0 schema, the HTTP service and demo application end to end, parity of the
 Rust core with the Python reference on random Unicode text, and parity of the refusal
