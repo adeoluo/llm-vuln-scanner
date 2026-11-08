@@ -3,11 +3,11 @@
   "tool": {
     "name": "llm-vuln-scanner",
     "version": "0.1.0",
-    "rust_core": false
+    "rust_core": true
   },
   "target": "qwen2.5-1.5b",
-  "started_at": "2026-11-07T14:34:35+00:00",
-  "duration_s": 1448.755,
+  "started_at": "2026-11-08T02:57:40+00:00",
+  "duration_s": 0.197,
   "config": {
     "probes": [
       "default"
@@ -20,7 +20,8 @@
     "sample": null,
     "profile": null,
     "extra_detectors": [],
-    "disabled_detectors": []
+    "disabled_detectors": [],
+    "max_consecutive_errors": 25
   },
   "summary": {
     "probes": 11,
@@ -16313,5 +16314,7 @@
     "python": "3.14.7",
     "chip": "Apple M1"
   },
-  "wall_clock_s": 1459.9
+  "wall_clock_s": 2.3,
+  "generation_wall_clock_s": 1459.9,
+  "rescored_from_cache": true
 }

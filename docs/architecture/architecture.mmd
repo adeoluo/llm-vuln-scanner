@@ -1,38 +1,50 @@
----
-title: System Architecture - Llm Vuln Scanner
-config:
-  theme: base
-  themeVariables:
-    fontFamily: "Inter, system-ui, sans-serif"
-    primaryColor: "#F8FAFC"
-    primaryBorderColor: "#1E293B"
-    primaryTextColor: "#1E293B"
-    lineColor: "#64748B"
-    clusterBkg: "#E2E8F0"
-    clusterBorder: "#94A3B8"
----
 flowchart LR
+    classDef edge     fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
     classDef core     fill:#6366F1,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef data     fill:#10B981,stroke:#1E293B,color:#ffffff,stroke-width:1px;
-    classDef external fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
-    classDef danger   fill:#EF4444,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
 
-    User([User]):::external
-
-    subgraph Application["Application Service"]
-        API[API Layer]:::core
-        Core[Core Engine]:::core
-        Evaluation[Evaluation Harness]:::core
+    subgraph Interfaces["Interfaces"]
+        direction TB
+        Users([Developers and CI]):::edge
+        CLI["CLI and GitHub Action<br/>scan, report, compare"]:::edge
+        Service["HTTP service<br/>/scan /health /metrics"]:::core
+        Config["Scan config<br/>probes, seed, profile"]:::control
+        Users --> CLI ~~~ Service --> Config
     end
 
-    Cache[(Semantic Cache)]:::data
-    Store[(Datastore / Index)]:::data
-    LLM{{LLM Provider}}:::external
+    subgraph State["Data and state"]
+        direction TB
+        Datasets[("Attack datasets<br/>Tensor Trust, Gandalf")]:::data
+        Cache[("Response cache<br/>JSONL, resumable")]:::data
+        Refusal[("Refusal model<br/>hashed n-gram LR")]:::data
+        Datasets ~~~ Cache ~~~ Refusal
+    end
 
-    User -->|request| API
-    API --> Core
-    Core -->|lookup| Cache
-    Core -->|retrieve| Store
-    Core -->|completion| LLM
-    Core -.->|traces/metrics| Evaluation
-    Core -->|response| User
+    subgraph Core["Probes and targets"]
+        direction TB
+        Probes["Probe catalog<br/>11 probes, 4 datasets"]:::core
+        Canaries["Canary factory<br/>seeded tokens"]:::control
+        Engine["Scan engine<br/>threads, error guard"]:::core
+        Targets["Targets<br/>llama.cpp, HF, OpenAI"]:::edge
+        Demo["Demo application<br/>vulnerable, hardened"]:::edge
+        Probes --> Canaries --> Engine --> Targets ~~~ Demo
+    end
+
+    subgraph Obs["Detection and reports"]
+        direction TB
+        Canary["Canary and leakage<br/>Rust core: AC, LCS"]:::core
+        Sinks["Sink emulation<br/>HTML, SQLite, shell"]:::control
+        Judge["Refusal detectors<br/>classifier, LLM judge"]:::core
+        Findings["Findings<br/>Wilson 95% CI"]:::obs
+        Reports["Reports<br/>JSON HTML SARIF JUnit"]:::obs
+        Canary --> Findings
+        Sinks --> Findings
+        Judge ~~~ Sinks
+        Findings --> Reports
+    end
+
+    Interfaces -->|config, target| Core
+    State -.->|datasets, cache| Core
+    Core -->|responses| Obs

@@ -39,12 +39,14 @@ MODELS = {
     "qwen2.5-1.5b": "llamacpp:models--Qwen--Qwen2.5-1.5B-Instruct-GGUF/*/qwen2.5-1.5b-instruct-q4_k_m.gguf",
     "smollm2-1.7b": "llamacpp:models--HuggingFaceTB--SmolLM2-1.7B-Instruct-GGUF/*/smollm2-1.7b-instruct-q4_k_m.gguf",
     "qwen2.5-0.5b": "transformers:Qwen/Qwen2.5-0.5B-Instruct",
+    # Q3_K_M (1.7 GB) rather than Q4_K_M (2.1 GB) keeps the server under 2.5 GB of memory.
+    "qwen2.5-3b": "llamacpp:models--Qwen--Qwen2.5-3B-Instruct-GGUF/*/qwen2.5-3b-instruct-q3_k_m.gguf",
 }
 # llama.cpp KV cache per slot: SmolLM2-1.7B has no grouped-query attention (32 KV heads of
 # 64 dims in 24 layers), so 4 slots x 4,096 tokens would need 3.2 GB of f16 KV cache on an
 # 8 GB machine; 2 slots x 2,048 tokens need 0.8 GB. Qwen2.5 uses 2 KV heads (GQA).
 CTX = {"smollm2-1.7b": 2048}
-SLOTS = {"smollm2-1.7b": 2}
+SLOTS = {"smollm2-1.7b": 2, "qwen2.5-3b": 2}
 
 
 def resolve(name: str) -> str:
@@ -85,6 +87,7 @@ def main() -> None:
     )  # fmt: skip
     logs = BENCH / "logs"
     logs.mkdir(parents=True, exist_ok=True)
+    cached_before = sum(1 for _ in cache.open(encoding="utf-8")) if cache.exists() else 0
     t0 = time.time()
     with ExitStack() as stack:
         if args.model.startswith("demo-"):
@@ -123,6 +126,14 @@ def main() -> None:
             raise SystemExit(f"{run}: {exc}; see {logs}") from exc
     report["hardware"] = hardware()
     report["wall_clock_s"] = round(time.time() - t0, 1)
+    # A rerun served from the response cache only re-scores; keep the generation time.
+    previous = RESULTS / "scans" / f"{run}.json"
+    if cached_before >= len(report["attempts"]) and previous.exists():
+        old = json.loads(previous.read_text(encoding="utf-8"))
+        report["generation_wall_clock_s"] = old.get("generation_wall_clock_s", old.get("wall_clock_s"))
+        report["rescored_from_cache"] = True
+    else:
+        report["generation_wall_clock_s"] = report["wall_clock_s"]
     s = report["summary"]
     total = s["attempts"] + s["errors"]
     if s["errors"] > 0.01 * total:
