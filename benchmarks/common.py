@@ -21,11 +21,13 @@ DATA = BENCH / "data"
 HF = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache" / "huggingface" / "hub"))
 XSTEST_MODELS = ("gpt4", "llama2new", "llama2orig", "mistralguard", "mistralinstruct")
 
-# Qwen3.5 is a hybrid reasoning model that thinks by default; the scans use its
-# non-thinking mode (the chat template's enable_thinking switch), which is how a chat
-# feature with a latency budget usually serves it. Gemma 4 and Granite 4.2 answer
-# without a thinking phase unless asked for one.
+# Qwen3.5 and Gemma 4 think before answering by default under llama.cpp; the scans use
+# their non-thinking mode, which is how a chat feature with a latency budget usually
+# serves them: the chat template's enable_thinking switch for Qwen3.5 and llama-server's
+# --reasoning off for Gemma 4 and Granite 4.2 (a first Gemma 4 run in the default mode
+# spent most of each token budget on hidden reasoning and was discarded).
 NO_THINKING = ("--chat-template-kwargs", '{"enable_thinking": false}')
+REASONING_OFF = ("--reasoning", "off")
 
 
 @dataclass(frozen=True)
@@ -71,9 +73,9 @@ MODELS: dict[str, LocalModel] = {
         LocalModel("qwen3.5-4b", "Qwen/Qwen3.5-4B", "unsloth/Qwen3.5-4B-GGUF",
                    "Qwen3.5-4B-Q3_K_M.gguf", "Q3_K_M", "2026-02", NO_THINKING, slots=2),
         LocalModel("gemma-4-e2b", "google/gemma-4-E2B-it", "google/gemma-4-E2B-it-qat-q4_0-gguf",
-                   "gemma-4-E2B_q4_0-it.gguf", "Q4_0 QAT", "2026-03", slots=2),
+                   "gemma-4-E2B_q4_0-it.gguf", "Q4_0 QAT", "2026-03", REASONING_OFF, slots=2),
         LocalModel("granite-4.2-3b", "ibm-granite/granite-4.2-3b", "ibm-granite/granite-4.2-3b-GGUF",
-                   "granite-4.2-3b-Q4_K_M.gguf", "Q4_K_M", "2026-08", slots=2),
+                   "granite-4.2-3b-Q4_K_M.gguf", "Q4_K_M", "2026-08", REASONING_OFF, slots=2),
     )
 }  # fmt: skip
 PRIMARY = "qwen3.5-2b"
