@@ -9,7 +9,7 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 22ms
 
 Hide
-Type `export PS1='$ ' VIRTUAL_ENV_DISABLE_PROMPT=1 && uv sync -q && source .venv/bin/activate && cd benchmarks/results/scans` Enter
+Type `export PS1='$ ' VIRTUAL_ENV_DISABLE_PROMPT=1 && source .venv/bin/activate && cd benchmarks/results/scans` Enter
 Sleep 4s
 Type `clear` Enter
 Sleep 1s

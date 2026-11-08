@@ -37,8 +37,8 @@ flowchart LR
         Canary["Canary and leakage<br/>Rust core: AC, LCS"]:::core
         Sinks["Sink emulation<br/>HTML, SQLite, shell"]:::control
         Judge["Refusal detectors<br/>classifier, LLM judge"]:::core
-        Findings["Findings<br/>Wilson 95% CI"]:::obs
-        Reports["Reports<br/>JSON HTML SARIF JUnit"]:::obs
+        Findings["Findings<br/>OWASP 2026, ATLAS v2026.10"]:::obs
+        Reports["Reports, Wilson 95% CI<br/>JSON HTML SARIF JUnit"]:::obs
         Canary --> Findings
         Sinks --> Findings
         Judge ~~~ Sinks

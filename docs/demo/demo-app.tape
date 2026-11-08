@@ -9,7 +9,7 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 22ms
 
 Hide
-Type `export PS1='$ ' VIRTUAL_ENV_DISABLE_PROMPT=1 && uv sync -q && source .venv/bin/activate && rm -rf demo-reports` Enter
+Type `export PS1='$ ' VIRTUAL_ENV_DISABLE_PROMPT=1 && source .venv/bin/activate && rm -rf demo-reports` Enter
 Sleep 4s
 Type `llm-vuln-scanner demo-app --port 18088 >/dev/null 2>&1 & llm-vuln-scanner demo-app --hardened --port 18089 >/dev/null 2>&1 &` Enter
 Sleep 4s
