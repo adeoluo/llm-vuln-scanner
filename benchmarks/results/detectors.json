@@ -1,0 +1,241 @@
+{
+  "dataset": "XSTest v2 completions (paul-rottger/xstest), human labels",
+  "n": 2250,
+  "refusal_rate": 0.5151,
+  "per_answering_model": {
+    "gpt4": {
+      "n": 450,
+      "refusal_rate": 0.4889
+    },
+    "llama2new": {
+      "n": 450,
+      "refusal_rate": 0.6089
+    },
+    "llama2orig": {
+      "n": 450,
+      "refusal_rate": 0.7756
+    },
+    "mistralguard": {
+      "n": 450,
+      "refusal_rate": 0.5333
+    },
+    "mistralinstruct": {
+      "n": 450,
+      "refusal_rate": 0.1689
+    }
+  },
+  "bootstrap": {
+    "resamples": 1000,
+    "seed": 0
+  },
+  "detectors": {
+    "keyword": {
+      "accuracy": 0.884,
+      "accuracy_ci95": [
+        0.8707,
+        0.8973
+      ],
+      "precision": 0.9554,
+      "precision_ci95": [
+        0.9423,
+        0.9679
+      ],
+      "recall": 0.8128,
+      "recall_ci95": [
+        0.7908,
+        0.8348
+      ],
+      "f1": 0.8783,
+      "f1_ci95": [
+        0.8634,
+        0.8933
+      ],
+      "predicted_refusal_rate": 0.4382,
+      "seconds": 0.07
+    },
+    "xstest_strmatch": {
+      "accuracy": 0.8844,
+      "accuracy_ci95": [
+        0.8711,
+        0.8973
+      ],
+      "precision": 0.9536,
+      "precision_ci95": [
+        0.9399,
+        0.9664
+      ],
+      "recall": 0.8154,
+      "recall_ci95": [
+        0.7937,
+        0.838
+      ],
+      "f1": 0.8791,
+      "f1_ci95": [
+        0.8645,
+        0.8935
+      ],
+      "predicted_refusal_rate": 0.4404,
+      "seconds": 0.0
+    },
+    "classifier (LOMO)": {
+      "accuracy": 0.8676,
+      "accuracy_ci95": [
+        0.8538,
+        0.8813
+      ],
+      "precision": 0.9556,
+      "precision_ci95": [
+        0.9408,
+        0.9684
+      ],
+      "recall": 0.7791,
+      "recall_ci95": [
+        0.7572,
+        0.8012
+      ],
+      "f1": 0.8584,
+      "f1_ci95": [
+        0.8431,
+        0.8731
+      ],
+      "predicted_refusal_rate": 0.42,
+      "seconds": 35.49,
+      "split": "leave one answering model out"
+    },
+    "sklearn tfidf+LR (LOMO)": {
+      "accuracy": 0.872,
+      "accuracy_ci95": [
+        0.8587,
+        0.8849
+      ],
+      "precision": 0.9494,
+      "precision_ci95": [
+        0.9359,
+        0.9626
+      ],
+      "recall": 0.7938,
+      "recall_ci95": [
+        0.7714,
+        0.8151
+      ],
+      "f1": 0.8647,
+      "f1_ci95": [
+        0.8502,
+        0.8788
+      ],
+      "predicted_refusal_rate": 0.4307,
+      "seconds": 2.85,
+      "split": "leave one answering model out"
+    },
+    "protectai distilroberta": {
+      "accuracy": 0.8716,
+      "accuracy_ci95": [
+        0.8578,
+        0.8849
+      ],
+      "precision": 0.8502,
+      "precision_ci95": [
+        0.8294,
+        0.8698
+      ],
+      "recall": 0.9111,
+      "recall_ci95": [
+        0.8945,
+        0.9276
+      ],
+      "f1": 0.8796,
+      "f1_ci95": [
+        0.8652,
+        0.8925
+      ],
+      "predicted_refusal_rate": 0.552,
+      "seconds": 83.31,
+      "model": "ProtectAI/distilroberta-base-rejection-v1"
+    },
+    "qwen3guard-gen-0.6b": {
+      "accuracy": 0.9062,
+      "accuracy_ci95": [
+        0.8942,
+        0.9169
+      ],
+      "precision": 0.943,
+      "precision_ci95": [
+        0.9291,
+        0.9557
+      ],
+      "recall": 0.8706,
+      "recall_ci95": [
+        0.8511,
+        0.8897
+      ],
+      "f1": 0.9053,
+      "f1_ci95": [
+        0.8927,
+        0.917
+      ],
+      "predicted_refusal_rate": 0.4756,
+      "seconds": 2548.66,
+      "model": "Qwen/Qwen3Guard-Gen-0.6B",
+      "no_refusal_field": 0
+    },
+    "judge qwen3.5-2b": {
+      "accuracy": 0.834,
+      "accuracy_ci95": [
+        0.8,
+        0.864
+      ],
+      "precision": 0.9375,
+      "precision_ci95": [
+        0.8978,
+        0.9684
+      ],
+      "recall": 0.7171,
+      "recall_ci95": [
+        0.6613,
+        0.7718
+      ],
+      "f1": 0.8126,
+      "f1_ci95": [
+        0.7724,
+        0.8503
+      ],
+      "predicted_refusal_rate": 0.384,
+      "seconds": 460.18,
+      "sample": "seeded random sample of 500",
+      "no_verdict": 0,
+      "model": "Qwen3.5-2B Q4_K_M (llama.cpp, non-thinking)"
+    },
+    "keyword (judge sample)": {
+      "accuracy": 0.884,
+      "accuracy_ci95": [
+        0.8539,
+        0.91
+      ],
+      "precision": 0.9573,
+      "precision_ci95": [
+        0.9273,
+        0.9813
+      ],
+      "recall": 0.8048,
+      "recall_ci95": [
+        0.7541,
+        0.8492
+      ],
+      "f1": 0.8745,
+      "f1_ci95": [
+        0.8387,
+        0.9036
+      ],
+      "predicted_refusal_rate": 0.422,
+      "seconds": 0.0,
+      "sample": "seeded random sample of 500"
+    }
+  },
+  "hardware": {
+    "machine": "arm64",
+    "system": "Darwin",
+    "cpus": 8,
+    "python": "3.14.7",
+    "chip": "Apple M1"
+  }
+}
