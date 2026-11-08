@@ -5,7 +5,7 @@ explains what the project does and why; this file explains how to change it safe
 
 ## Project
 
-An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2025 and MITRE ATLAS.
+An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2026, the OWASP Top 10 for Agentic Applications 2026 and MITRE ATLAS v2026.10.
 
 ## Layout
 
@@ -41,20 +41,20 @@ Key modules:
 - `src/llm_vuln_scanner/detectors/judge.py`: LLM judge: a local model grades whether a restricted request was answered.
 - `src/llm_vuln_scanner/detectors/refusal.py`: Refusal detection: did the model decline a restricted request? Jailbreak probes ask for something the system prompt forbids (always a fictional task) and check two things: whether the compliance...
 - `src/llm_vuln_scanner/detectors/secrets.py`: Secret formats: credentials and personal data shapes in model output.
-- `src/llm_vuln_scanner/detectors/sinks.py`: Sink detectors: would a downstream component execute what the model wrote? Improper output handling (OWASP LLM05) is a property of the application: the model's text reaches an HTML page, a SQL engine...
+- `src/llm_vuln_scanner/detectors/sinks.py`: Sink detectors: would a downstream component execute what the model wrote? Improper output handling (OWASP LLM10:2026) is a property of the application: the model's text reaches an HTML page, a SQL...
 - `src/llm_vuln_scanner/engine.py`: The scan engine: expands probes, queries the target, runs detectors, aggregates.
 - `src/llm_vuln_scanner/matching.py`: Canary search and system-prompt similarity, with a Rust core and a Python reference.
 - `src/llm_vuln_scanner/probes/__init__.py`: Probes package; see :mod:`llm_vuln_scanner.probes.base`.
-- `src/llm_vuln_scanner/probes/agency.py`: Excessive agency probes (OWASP LLM06; ATLAS AML.T0053, AML.T0086).
+- `src/llm_vuln_scanner/probes/agency.py`: Excessive agency probes (OWASP LLM03:2026; Agentic ASI01, ASI02; ATLAS AML.T0053, AML.T0086).
 - `src/llm_vuln_scanner/probes/base.py`: Probe interface, registry and the scan context probes build attempts from.
 - `src/llm_vuln_scanner/probes/datasets.py`: Probes built from published attack datasets (opt-in, need ``--data-dir``).
-- `src/llm_vuln_scanner/probes/disclosure.py`: Sensitive information disclosure probes (OWASP LLM02; ATLAS AML.T0057, AML.T0055).
-- `src/llm_vuln_scanner/probes/dos.py`: Model denial of service probes (OWASP LLM10; ATLAS AML.T0029, AML.T0034.001).
-- `src/llm_vuln_scanner/probes/encoding.py`: Encoding and obfuscation probes (OWASP LLM01; ATLAS AML.T0068).
-- `src/llm_vuln_scanner/probes/injection.py`: Prompt injection probes (OWASP LLM01; ATLAS AML.T0051).
-- `src/llm_vuln_scanner/probes/jailbreak.py`: Jailbreak probes on fictional restricted tasks (OWASP LLM01; ATLAS AML.T0054).
-- `src/llm_vuln_scanner/probes/leakage.py`: System prompt leakage probes (OWASP LLM07; ATLAS AML.T0056).
-- `src/llm_vuln_scanner/probes/output.py`: Improper output handling probes (OWASP LLM05; ATLAS AML.T0077, AML.T0050).
+- `src/llm_vuln_scanner/probes/disclosure.py`: Sensitive information disclosure probes (OWASP LLM02:2026; ATLAS AML.T0085.002, AML.T0055).
+- `src/llm_vuln_scanner/probes/dos.py`: Model denial of service probes (OWASP LLM06:2026; ATLAS AML.T0029, AML.T0034.001).
+- `src/llm_vuln_scanner/probes/encoding.py`: Encoding and obfuscation probes (OWASP LLM01:2026; ATLAS AML.T0068).
+- `src/llm_vuln_scanner/probes/injection.py`: Prompt injection probes (OWASP LLM01:2026; ATLAS AML.T0051).
+- `src/llm_vuln_scanner/probes/jailbreak.py`: Jailbreak probes on fictional restricted tasks (OWASP LLM01:2026; ATLAS AML.T0054).
+- `src/llm_vuln_scanner/probes/leakage.py`: System prompt leakage probes (OWASP LLM08:2026 Hidden Context Exposure; ATLAS AML.T0085.003).
+- `src/llm_vuln_scanner/probes/output.py`: Improper output handling probes (OWASP LLM10:2026; ATLAS AML.T0077, AML.T0050).
 - `src/llm_vuln_scanner/probes/scenarios.py`: Fictional applications that model-mode probes wrap their attacks in.
 - `src/llm_vuln_scanner/report/__init__.py`: Report renderers.
 - `src/llm_vuln_scanner/report/html.py`: Self-contained HTML report (no external assets, every value HTML-escaped).
@@ -78,12 +78,13 @@ Key modules:
 | `make rust-develop` | Rebuild the Rust core into .venv after editing rust/ |
 | `make parity` | Rust versus Python parity tests |
 | `make data` | Download the public datasets (about 6 MB, outside the repository) |
-| `make models` | Download the local models into the Hugging Face cache (about 5 GB) |
+| `make models` | Download the local models into the Hugging Face cache (about 11 GB; MODELS="qwen3.5-2b ..." for a subset) |
+| `make atlas-snapshot` | Rewrite tests/data/atlas-2026.10-techniques.json from the ATLAS v2026.10 release asset |
 | `make train-refusal` | Retrain the bundled refusal classifier on XSTest v2 |
 | `make scans` | Full scans of the local models (writes benchmarks/results/scans/) |
-| `make demo-scans` | Scan the demo application (vulnerable and hardened) backed by Qwen2.5-1.5B |
-| `make dataset-scans` | Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen2.5-1.5B |
-| `make detectors` | Refusal detectors against XSTest human labels (keyword, classifier, reference model, judge) |
+| `make demo-scans` | Scan the demo application (vulnerable and hardened) backed by Qwen3.5-2B |
+| `make dataset-scans` | Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 300) |
+| `make detectors` | Refusal detectors against XSTest human labels (keyword, classifier, reference models, judge) |
 | `make garak` | garak on the same model (separate venv; see benchmarks/garak/README.md) |
 | `make speed` | Detector throughput, Rust versus Python |
 | `make ablations` | Detector ablations re-scored on the stored scan responses |
