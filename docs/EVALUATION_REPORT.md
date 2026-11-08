@@ -9,11 +9,12 @@ the commands that produce each results file are listed under Reproducibility.
   network on the same GPU during most runs, so wall-clock times are upper bounds); one
   heavy job at a time, peak memory under 3 GB.
 - **Targets:** the current small open instruction models, as GGUF builds served by
-  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 2 or 4 parallel slots of 4,096 tokens (per model in the first table):
+  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 2 or 4 parallel slots of 4,096
+  tokens (per model in the first table):
   - Qwen3.5-0.8B and Qwen3.5-2B (Q4_K_M) and Qwen3.5-4B (Q3_K_M, about 2.9 GB of server
     memory with 4 slots; it continued with 2 slots when the machine started swapping),
-    released February 2026, from the unsloth GGUF builds. Qwen3.5 is
-    a hybrid reasoning model that thinks by default; the scans use its non-thinking mode
+    released February 2026, from the unsloth GGUF builds. Qwen3.5 is a hybrid reasoning
+    model that thinks by default; the scans use its non-thinking mode
     (`--chat-template-kwargs '{"enable_thinking": false}'`), the usual setting for a chat
     feature with a latency budget;
   - gemma-4-E2B-it (Google's quantization-aware Q4_0 build), released March 2026, and
@@ -36,8 +37,9 @@ the commands that produce each results file are listed under Reproducibility.
   differences between two targets use Newcombe's hybrid score interval. Errors are
   counted separately and are zero in every committed run.
 - **Graders:** deterministic detectors (canary search, LCS leakage, SQLite sink, HTML parser,
-  shell tokenizer, tool-call log, token budget, regex) and, for jailbreaks, the refusal
-  classifier (`rule="all"`: the compliance canary and a non-refusal are both required).
+  shell tokenizer, tool-call log, token budget, regex) and, for jailbreaks, two refusal
+  detectors (`rule="all"`: the compliance canary and a non-refusal from both the trained
+  classifier and the phrase list are required; ADR-0006).
   The refusal detectors are validated against human labels (XSTest v2) below, next to two
   references: ProtectAI distilroberta-base-rejection-v1 and Qwen3Guard-Gen-0.6B.
 
