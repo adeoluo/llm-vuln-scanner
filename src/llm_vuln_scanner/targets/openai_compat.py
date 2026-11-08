@@ -17,6 +17,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Sequence
 from types import TracebackType
 from typing import Any
 
@@ -133,12 +134,15 @@ class LlamaCppServer:
     """Runs ``llama-server`` on a GGUF model for the lifetime of a ``with`` block.
 
     ``parallel`` slots let the engine send that many requests at once (llama.cpp batches
-    them); each slot gets ``ctx_per_slot`` tokens of context.
+    them); each slot gets ``ctx_per_slot`` tokens of context. ``extra_args`` are passed to
+    ``llama-server`` unchanged, for example
+    ``["--chat-template-kwargs", '{"enable_thinking": false}']`` to serve a hybrid
+    reasoning model such as Qwen3.5 in its non-thinking mode.
     """
 
     def __init__(self, model_path: str, parallel: int = 4, ctx_per_slot: int = 4096,
                  threads: int | None = None, binary: str = "llama-server",
-                 log_path: str | None = None) -> None:  # fmt: skip
+                 log_path: str | None = None, extra_args: Sequence[str] = ()) -> None:  # fmt: skip
         exe = shutil.which(binary)
         if exe is None:
             raise FileNotFoundError(f"{binary} not found (install llama.cpp)")
@@ -151,6 +155,7 @@ class LlamaCppServer:
         ]  # fmt: skip
         if threads:
             self.cmd += ["-t", str(threads)]
+        self.cmd += list(extra_args)
         self.log_path = log_path or os.devnull
         self.proc: subprocess.Popen[bytes] | None = None
         self.model_path = model_path

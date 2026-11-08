@@ -3,7 +3,8 @@
 ## Overview
 - **What it is:** a vulnerability scanner for LLM applications. It sends probes (attack
   attempts) to a target, decides success with detectors, and reports findings mapped to
-  the OWASP Top 10 for LLM Applications 2025 and MITRE ATLAS.
+  the OWASP Top 10 for LLM Applications 2026, the OWASP Top 10 for Agentic Applications
+  2026 and MITRE ATLAS v2026.10.
 - **Bundled model:** `refusal-v1`, a logistic regression over 2^18 hashed character and
   word n-grams, trained on the 2,250 human-labelled XSTest v2 completions (0.6 MB).
 - **Models scanned in the benchmarks:** Qwen2.5-0.5B-Instruct (transformers, fp16 on MPS),

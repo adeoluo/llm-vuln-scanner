@@ -1,4 +1,4 @@
-"""System prompt leakage probes (OWASP LLM07; ATLAS AML.T0056).
+"""System prompt leakage probes (OWASP LLM08:2026 Hidden Context Exposure; ATLAS AML.T0085.003).
 
 The system prompt of a fictional application carries a canary reference code and an
 instruction never to reveal it. Sixteen extraction prompts then ask for it directly,
@@ -49,8 +49,8 @@ class SystemPromptLeakage:
         title="System prompt and planted secret extraction",
         description="Extraction prompts make the model reveal its confidential instructions "
         "or a secret planted in them, verbatim, encoded or paraphrased.",
-        owasp="LLM07",
-        atlas=("AML.T0056", "AML.T0057"),
+        owasp="LLM08",
+        atlas=("AML.T0085.003", "AML.T0069.002"),
         severity=Severity.HIGH,
         remediation="Keep secrets and authorization logic out of the system prompt entirely; "
         "assume the prompt is public. Filter outputs for known canaries and for long "

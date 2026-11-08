@@ -12,6 +12,16 @@ from __future__ import annotations
 from html import escape
 from typing import Any
 
+from llm_vuln_scanner.report.taxonomy import upgrade_report
+from llm_vuln_scanner.taxonomy import (
+    ATLAS_NAME,
+    ATLAS_URI,
+    OWASP_AGENTIC_NAME,
+    OWASP_AGENTIC_URI,
+    OWASP_LLM_NAME,
+    OWASP_LLM_URI,
+)
+
 _CSS = """
 body{font:14px/1.45 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;margin:24px;color:#1E293B;
 background:#F8FAFC}h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:28px 0 8px}
@@ -32,6 +42,14 @@ border-radius:6px;font-size:12px}
 """
 
 
+def _atlas(f: dict[str, Any]) -> str:
+    names = f.get("atlas_names") or f["atlas"]
+    return "<br>".join(
+        f"<span title='{escape(n)}'>{escape(t)}</span> <span class='muted'>{escape(n)}</span>"
+        for t, n in zip(f["atlas"], names, strict=True)
+    )
+
+
 def _pct(x: float | None) -> str:
     return "n/a" if x is None else f"{x:.1%}"
 
@@ -41,9 +59,25 @@ def _bar(rate: float, lo: float, hi: float) -> str:
             f'</span><i style="left:{rate * 100:.1f}%"></i></div>')  # fmt: skip
 
 
+def _coverage(table: dict[str, Any]) -> str:
+    e = escape
+    rows = []
+    for cid, o in table.items():
+        result = ('<span class="bad">vulnerable</span>' if o["vulnerable"] else
+                  ('<span class="ok">no finding</span>' if o["tested"] else '<span class="muted">not tested</span>'))  # fmt: skip
+        rows.append(
+            f"<tr><td>{e(o.get('ref', cid))}</td><td><a href='{e(o['url'])}'>{e(o['name'])}</a></td>"
+            f"<td>{e(', '.join(o['probes']) or 'none')}</td><td class='num'>{o['successes']}/{o['attempts']}"
+            f"</td><td>{result}</td></tr>"
+        )
+    return "".join(rows)
+
+
 def render_html(report: dict[str, Any]) -> str:
     e = escape
+    report = upgrade_report(report)
     s = report["summary"]
+    tax = report["taxonomy"]
     rows = []
     for f in report["findings"]:
         lo, hi = f["ci95"]
@@ -51,18 +85,11 @@ def render_html(report: dict[str, Any]) -> str:
         rows.append(
             f"<tr><td><span class='sev {e(f['severity'])}'>{e(f['severity'])}</span></td>"
             f"<td><a href='#{e(f['probe'])}'>{e(f['probe'])}</a><br><span class='muted'>{e(f['title'])}"
-            f"</span></td><td>{e(f['owasp'])}</td><td>{e(', '.join(f['atlas']))}</td><td>{status}</td>"
+            f"</span></td><td title='{e(f['owasp_name'])}'>{e(f['owasp_ref'])}</td>"
+            f"<td>{e(', '.join(f['asi'])) or '<span class=muted>none</span>'}</td>"
+            f"<td>{_atlas(f)}</td><td>{status}</td>"
             f"<td class='num'>{f['successes']}/{f['attempts']}</td><td class='num'>{_pct(f['rate'])}<br>"
             f"<span class='muted'>{_pct(lo)} to {_pct(hi)}</span></td><td>{_bar(f['rate'], lo, hi)}</td></tr>"
-        )
-    owasp_rows = []
-    for cid, o in report["owasp"].items():
-        result = ('<span class="bad">vulnerable</span>' if o["vulnerable"] else
-                  ('<span class="ok">no finding</span>' if o["tested"] else '<span class="muted">not tested</span>'))  # fmt: skip
-        owasp_rows.append(
-            f"<tr><td>{e(cid)}</td><td><a href='{e(o['url'])}'>{e(o['name'])}</a></td>"
-            f"<td>{e(', '.join(o['probes']) or '-')}</td><td class='num'>{o['successes']}/{o['attempts']}"
-            f"</td><td>{result}</td></tr>"
         )
     details = []
     for f in report["findings"]:
@@ -108,11 +135,17 @@ temperature {e(str(cfg["temperature"]))}</div>
 <div class="card"><b>{s["errors"]}</b>target errors</div>
 </div>
 <h2>Findings</h2>
-<table><tr><th>Severity</th><th>Probe</th><th>OWASP</th><th>ATLAS</th><th>Status</th><th>Succeeded</th>
-<th>Rate (95% CI)</th><th></th></tr>{"".join(rows)}</table>
-<h2>OWASP Top 10 for LLM Applications (2025) coverage</h2>
+<table><tr><th>Severity</th><th>Probe</th><th>OWASP LLM {e(tax["owasp_llm"])}</th>
+<th>OWASP Agentic {e(tax["owasp_agentic"])}</th><th>MITRE ATLAS v{e(tax["atlas"])}</th><th>Status</th>
+<th>Succeeded</th><th>Rate (95% CI)</th><th></th></tr>{"".join(rows)}</table>
+<h2><a href="{e(OWASP_LLM_URI)}">{e(OWASP_LLM_NAME)} {e(tax["owasp_llm"])}</a> coverage</h2>
 <table><tr><th>ID</th><th>Category</th><th>Probes</th><th>Succeeded</th><th>Result</th></tr>
-{"".join(owasp_rows)}</table>
+{_coverage(report["owasp"])}</table>
+<h2><a href="{e(OWASP_AGENTIC_URI)}">{e(OWASP_AGENTIC_NAME)} {e(tax["owasp_agentic"])}</a> coverage</h2>
+<table><tr><th>ID</th><th>Risk</th><th>Probes</th><th>Succeeded</th><th>Result</th></tr>
+{_coverage(report["agentic"])}</table>
+<p class="muted">ATLAS technique identifiers and names follow the
+<a href="{e(ATLAS_URI)}">{e(ATLAS_NAME)} v{e(tax["atlas"])}</a> data release.</p>
 <h2>Details</h2>
 {"".join(details)}
 </body></html>

@@ -1,4 +1,4 @@
-"""Model denial of service probes (OWASP LLM10; ATLAS AML.T0029, AML.T0034.001).
+"""Model denial of service probes (OWASP LLM06:2026; ATLAS AML.T0029, AML.T0034.001).
 
 Twelve prompts ask for effectively unbounded output: repeat a word forever, count to a
 million, keep doubling a story, print digits of pi without stopping. The attempt carries
@@ -41,7 +41,7 @@ class TokenBlowup:
         title="Unbounded generation on request (token blow-up)",
         description="Prompts for endless output run the model to the caller's token cap, so "
         "one cheap request costs the full budget of compute and latency.",
-        owasp="LLM10",
+        owasp="LLM06",
         atlas=("AML.T0029", "AML.T0034.001"),
         severity=Severity.MEDIUM,
         remediation="Set tight per-request max_tokens and timeouts, rate-limit by user, cap "

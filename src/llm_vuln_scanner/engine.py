@@ -29,10 +29,11 @@ from llm_vuln_scanner.detectors.base import truncate
 from llm_vuln_scanner.probes.base import AppProfile, ProbeContext, sample
 from llm_vuln_scanner.stats import wilson
 from llm_vuln_scanner.targets.base import Target
-from llm_vuln_scanner.taxonomy import OWASP, Severity
+from llm_vuln_scanner.taxonomy import AGENTIC, ATLAS, OWASP, Severity, versions
 from llm_vuln_scanner.types import Attempt, AttemptResult, Detection, Response
 
-SCHEMA_VERSION = "1"
+# 2: OWASP LLM Top 10 2026 identifiers, OWASP Agentic 2026 and ATLAS v2026.10 fields.
+SCHEMA_VERSION = "2"
 
 
 @dataclass
@@ -252,6 +253,7 @@ class Finding:
     detector_hits: dict[str, int]
     breakdown: dict[str, dict[str, list[int]]]
     examples: list[dict[str, Any]]
+    asi: list[str] = field(default_factory=list)
 
     @property
     def rate(self) -> float:
@@ -264,7 +266,10 @@ class Finding:
     def to_dict(self) -> dict[str, Any]:
         return {
             "probe": self.probe, "title": self.title, "description": self.description,
-            "owasp": self.owasp, "owasp_name": OWASP[self.owasp].name, "atlas": self.atlas,
+            "owasp": self.owasp, "owasp_ref": OWASP[self.owasp].ref, "owasp_name": OWASP[self.owasp].name,
+            "owasp_url": OWASP[self.owasp].url, "atlas": self.atlas,
+            "atlas_names": [ATLAS[t].display for t in self.atlas], "asi": self.asi,
+            "asi_names": [AGENTIC[r].name for r in self.asi],
             "severity": self.severity.name.lower(), "remediation": self.remediation,
             "references": self.references, "attempts": self.attempts,
             "successes": self.successes, "errors": self.errors, "rate": self.rate,
@@ -300,7 +305,7 @@ def _finding(probe: str, rs: list[AttemptResult], n_examples: int = 3) -> Findin
         probe=probe, title=info.title, description=info.description, owasp=info.owasp,
         atlas=list(info.atlas), severity=info.severity, remediation=info.remediation,
         references=list(info.references), attempts=n, successes=k, errors=len(rs) - n,
-        ci=wilson(k, n), detector_hits=dict(hits),
+        ci=wilson(k, n), detector_hits=dict(hits), asi=list(info.asi),
         breakdown={k2: dict(sorted(v2.items())) for k2, v2 in breakdown.items()},
         examples=examples,
     )  # fmt: skip
@@ -339,7 +344,17 @@ class ScanReport:
             k = sum(f.successes for f in fs)
             n = sum(f.attempts for f in fs)
             owasp_summary[cid] = {
-                "name": cat.name, "url": cat.url, "probes": [f.probe for f in fs],
+                "ref": cat.ref, "name": cat.name, "url": cat.url, "probes": [f.probe for f in fs],
+                "attempts": n, "successes": k, "rate": k / n if n else None,
+                "vulnerable": any(f.vulnerable for f in fs), "tested": bool(fs),
+            }  # fmt: skip
+        agentic_summary: dict[str, dict[str, Any]] = {}
+        for rid, risk in AGENTIC.items():
+            fs = [f for f in self.findings if rid in f.asi]
+            k = sum(f.successes for f in fs)
+            n = sum(f.attempts for f in fs)
+            agentic_summary[rid] = {
+                "ref": risk.ref, "name": risk.name, "url": risk.url, "probes": [f.probe for f in fs],
                 "attempts": n, "successes": k, "rate": k / n if n else None,
                 "vulnerable": any(f.vulnerable for f in fs), "tested": bool(fs),
             }  # fmt: skip
@@ -364,7 +379,9 @@ class ScanReport:
                 "max_severity": (s.name.lower() if (s := self.max_severity()) else None),
                 "completion_tokens": sum(tokens),
             },
+            "taxonomy": versions(),
             "owasp": owasp_summary,
+            "agentic": agentic_summary,
             "findings": [f.to_dict() for f in self.findings],
         }
         if include_attempts:

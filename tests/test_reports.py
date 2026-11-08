@@ -81,7 +81,10 @@ def test_html_is_escaped_even_with_hostile_responses() -> None:
 def test_markdown_and_annotations(report: dict[str, Any], tmp_path: Path) -> None:
     md = RENDERERS["markdown"](report)
     assert md.startswith("## LLM vulnerability scan")
-    assert "| LLM10 Unbounded Consumption | yes |" in md
+    assert "| LLM06:2026 Unbounded Consumption | yes |" in md
+    assert "| LLM10:2026 Improper Output Handling | yes |" in md
+    assert "| ASI10:2026 Rogue Agents | no | not tested |" in md
+    assert "2025" not in md
     ann = github_annotations(report, Severity.CRITICAL)
     assert "::error title=output.sql" in ann
     assert "::warning title=" in ann

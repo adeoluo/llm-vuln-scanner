@@ -1,5 +1,5 @@
 name: LLM Vuln Scanner
-description: Scan an LLM endpoint or application for OWASP LLM Top 10 vulnerabilities and upload SARIF.
+description: Scan an LLM endpoint or application for OWASP LLM Top 10 2026 vulnerabilities and upload SARIF.
 author: Adeolu Ogunnoiki
 branding:
   icon: shield
