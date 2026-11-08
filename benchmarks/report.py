@@ -79,19 +79,25 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
         )
 
 
+def slots(report: dict[str, Any]) -> str:
+    """Parallel llama-server slots per generation chunk (4 unless recorded otherwise)."""
+    used = sorted({c.get("slots", 4) for c in report.get("generation_chunks", [])}, reverse=True) or [4]
+    return " then ".join(str(x) for x in used)
+
+
 def models_table() -> None:
     rows = [(k, load(f"scans/{k}.json")) for k in MODELS]
     rows = [(k, r) for k, r in rows if r is not None]
     if not rows:
         return
-    print("\n#### Models scanned (llama.cpp, greedy, 4 parallel slots of 4,096 tokens)\n")
-    print("| Key | Model | Released | GGUF build | Quantization | Mean output tokens | Scan time |")
-    print("|---|---|---|---|---|---|---|")
+    print("\n#### Models scanned (llama.cpp, greedy, parallel slots of 4,096 tokens)\n")
+    print("| Key | Model | Released | GGUF build | Quantization | Slots | Mean output tokens | Scan time |")
+    print("|---|---|---|---|---|---|---|---|")
     for k, r in rows:
         m = LOCAL_MODELS[k]
         toks = [a["completion_tokens"] or 0 for a in r["attempts"]]
         print(f"| {k} | [{m.model_id}](https://huggingface.co/{m.model_id}) | {m.released} | "
-              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | "
+              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | {slots(r)} | "
               f"{sum(toks) / max(1, len(toks)):.0f} | {r.get('generation_wall_clock_s', 0) / 60:.0f} min |")  # fmt: skip
     version = rows[0][1].get("llama_cpp", "").replace("version: ", "")
     print(f"\nServer: llama.cpp `llama-server` {version}.")

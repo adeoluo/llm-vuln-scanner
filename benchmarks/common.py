@@ -57,7 +57,9 @@ class LocalModel:
 
 
 # The current small open instruction models (no token needed). Q3_K_M for the 4B keeps
-# llama-server under about 2.7 GB on the 8 GB test machine.
+# llama-server near 2.9 GB with 4 slots; with another job on the same 8 GB machine that
+# still pushed it into swap, so the 4B scan continued with 2 slots after its first chunk
+# (greedy decoding, so the slot count changes speed, not the requests or the decoding).
 MODELS: dict[str, LocalModel] = {
     m.key: m
     for m in (
@@ -66,7 +68,7 @@ MODELS: dict[str, LocalModel] = {
         LocalModel("qwen3.5-2b", "Qwen/Qwen3.5-2B", "unsloth/Qwen3.5-2B-GGUF",
                    "Qwen3.5-2B-Q4_K_M.gguf", "Q4_K_M", "2026-02", NO_THINKING),
         LocalModel("qwen3.5-4b", "Qwen/Qwen3.5-4B", "unsloth/Qwen3.5-4B-GGUF",
-                   "Qwen3.5-4B-Q3_K_M.gguf", "Q3_K_M", "2026-02", NO_THINKING),
+                   "Qwen3.5-4B-Q3_K_M.gguf", "Q3_K_M", "2026-02", NO_THINKING, slots=2),
         LocalModel("gemma-4-e2b", "google/gemma-4-E2B-it", "google/gemma-4-E2B-it-qat-q4_0-gguf",
                    "gemma-4-E2B_q4_0-it.gguf", "Q4_0 QAT", "2026-03"),
         LocalModel("granite-4.2-3b", "ibm-granite/granite-4.2-3b", "ibm-granite/granite-4.2-3b-GGUF",
