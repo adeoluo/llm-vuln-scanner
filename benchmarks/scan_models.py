@@ -1,12 +1,13 @@
 """Full scans of local models and the demo application (the README headline tables).
 
     uv run python benchmarks/scan_models.py --model qwen3.5-2b
-    uv run python benchmarks/scan_models.py --model qwen3.5-4b --probes injection,jailbreak
+    uv run python benchmarks/scan_models.py --model qwen3.5-4b --only injection,jailbreak
     uv run python benchmarks/scan_models.py --model demo-vulnerable --backend qwen3.5-2b
 
 Models are the GGUF builds in ``common.MODELS`` served by llama.cpp. Responses are cached
 in ../.bench-data/llm-vuln-scanner/cache/<run>.jsonl, so a run can be split into chunks of
-probes (each under about 40 minutes on the test machine), interrupted and resumed, and
+probes with ``--only`` (each under about 40 minutes on the test machine), interrupted and
+resumed, and
 detectors can be re-evaluated without querying the model again. The generation time of
 every chunk that produced new responses is summed in cache/<run>.timing.json, so the
 reported wall clock covers the whole scan. Reports go to benchmarks/results/scans/<run>.json.
@@ -55,6 +56,11 @@ def main() -> None:
     )
     ap.add_argument("--probes", default="default")
     ap.add_argument("--sample", type=int, default=None)
+    ap.add_argument(
+        "--only",
+        default=None,
+        help="run only these probes of the planned set (a chunk; same canaries as the full run)",
+    )
     ap.add_argument("--generations", type=int, default=1)
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--seed", type=int, default=0)
@@ -68,6 +74,7 @@ def main() -> None:
         probes=[p for p in args.probes.split(",") if p], generations=args.generations,
         temperature=args.temperature, seed=args.seed, concurrency=args.concurrency, sample=args.sample,
         cache_path=cache, data_dir=Path(args.data_dir), max_consecutive_errors=25,
+        only=[p for p in args.only.split(",") if p] if args.only else None,
     )  # fmt: skip
     logs = BENCH / "logs"
     logs.mkdir(parents=True, exist_ok=True)
@@ -118,11 +125,12 @@ def main() -> None:
     timing = json.loads(timing_path.read_text(encoding="utf-8")) if timing_path.exists() else {"chunks": []}
     cached_after = sum(1 for _ in cache.open(encoding="utf-8")) if cache.exists() else 0
     if cached_after > cached_before:
-        timing["chunks"].append({"probes": args.probes, "new_responses": cached_after - cached_before,
+        timing["chunks"].append({"probes": args.only or args.probes, "new_responses": cached_after - cached_before,
                                  "slots": cfg.concurrency,
                                  "wall_clock_s": wall, "finished": time.strftime("%Y-%m-%dT%H:%M:%S")})  # fmt: skip
         timing_path.write_text(json.dumps(timing, indent=1) + "\n", encoding="utf-8")
-    report["generation_wall_clock_s"] = round(sum(c["wall_clock_s"] for c in timing["chunks"]), 1)
+    used = [c for c in timing["chunks"] if not c.get("discarded")]
+    report["generation_wall_clock_s"] = round(sum(c["wall_clock_s"] for c in used), 1)
     report["generation_chunks"] = timing["chunks"]
     s = report["summary"]
     total = s["attempts"] + s["errors"]

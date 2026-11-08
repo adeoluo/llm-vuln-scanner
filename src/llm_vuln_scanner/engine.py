@@ -53,6 +53,10 @@ class ScanConfig:
     extra_detectors: tuple[str, ...] = ()
     disabled_detectors: tuple[str, ...] = ()
     max_consecutive_errors: int | None = None
+    # Run only these probes (or families) of the planned set. Canaries are drawn in plan
+    # order, so planning the full set and running a part keeps every attempt identical to
+    # the full scan's: a long scan can be split into chunks that share one response cache.
+    only: list[str] | None = None
 
     def __post_init__(self) -> None:
         if self.generations < 1:
@@ -65,6 +69,10 @@ class ScanConfig:
             raise ValueError("sample must be at least 1")
         if self.max_consecutive_errors is not None and self.max_consecutive_errors < 1:
             raise ValueError("max_consecutive_errors must be at least 1")
+        if self.only is not None:
+            outside = set(pr.select(self.only)) - set(pr.select(self.probes))
+            if outside:
+                raise ValueError(f"only selects probes outside the planned set: {', '.join(sorted(outside))}")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,7 +82,7 @@ class ScanConfig:
             "sample": self.sample, "profile": self.profile.name if self.profile else None,
             "extra_detectors": list(self.extra_detectors),
             "disabled_detectors": list(self.disabled_detectors),
-            "max_consecutive_errors": self.max_consecutive_errors,
+            "max_consecutive_errors": self.max_consecutive_errors, "only": self.only,
         }  # fmt: skip
 
 
@@ -144,6 +152,9 @@ class Scanner:
         for name in pr.select(self.config.probes):
             got = pr.get(name).attempts(ctx)
             attempts.extend(sample(got, self.config.sample, ctx.rng(name + ":sample")))
+        if self.config.only is not None:
+            keep = set(pr.select(self.config.only))
+            attempts = [a for a in attempts if a.probe in keep]
         seen: set[str] = set()
         for a in attempts:
             if a.id in seen:

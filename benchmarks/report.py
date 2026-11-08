@@ -26,11 +26,8 @@ def load(name: str) -> dict[str, Any] | None:
     data: dict[str, Any] = json.loads(p.read_text(encoding="utf-8"))
     # A scan split into chunks of probes writes partial reports until its final full run.
     expected = ["dataset"] if "datasets" in name else ["default"]
-    if (
-        name.startswith("scans/")
-        and not name.startswith("scans/demo-")
-        and data["config"]["probes"] != expected
-    ):
+    partial = data["config"]["probes"] != expected or data["config"].get("only")
+    if name.startswith("scans/") and not name.startswith("scans/demo-") and partial:
         return None
     # Scan reports always print with the current taxonomy (OWASP 2026, ATLAS v2026.10).
     return upgrade_report(data) if name.startswith("scans/") else data
