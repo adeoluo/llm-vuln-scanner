@@ -55,7 +55,10 @@ def scans_table(runs: list[str], title: str) -> None:
     print("| Errors | | " + " | ".join(str(rep["summary"]["errors"]) for rep in reports.values()) + " |")
     print(
         "| Wall clock | | "
-        + " | ".join(f"{rep.get('wall_clock_s', rep['duration_s']) / 60:.0f} min" for rep in reports.values())
+        + " | ".join(
+            f"{rep.get('generation_wall_clock_s', rep['duration_s']) / 60:.0f} min"
+            for rep in reports.values()
+        )
         + " |"
     )
 
@@ -121,7 +124,7 @@ def garak_table(model: str = "qwen2.5-1.5b") -> None:
             f"| {o} {oo.get('name', '')} | {go['probes'] if go else 0} | {gs} | {len(oo.get('probes', []))} | {os_} |"
         )
     print(f"\ngarak: {g['attempts']} attempts in {g['wall_clock_s'] / 60:.0f} min; this scanner: "
-          f"{ours['summary']['attempts']} attempts in {ours.get('wall_clock_s', 0) / 60:.0f} min.")  # fmt: skip
+          f"{ours['summary']['attempts']} attempts in {ours.get('generation_wall_clock_s', 0) / 60:.0f} min.")  # fmt: skip
 
 
 def owasp_table(runs: list[str]) -> None:

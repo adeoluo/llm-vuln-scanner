@@ -87,8 +87,10 @@ def ablate(run: str) -> dict[str, Any] | None:
             report["target"], a, cfg["seed"] + rec["generation"], cfg["temperature"], cfg["max_tokens"]
         )
         cached = cache.get(key)
-        text = cached.text if cached is not None else rec["response"]
-        res = scanner.evaluate(a, Response(text=text), rec["generation"])
+        resp = cached or Response(text=rec["response"], completion_tokens=rec["completion_tokens"],
+                                  finish_reason=rec["finish_reason"])  # fmt: skip
+        text = resp.text
+        res = scanner.evaluate(a, resp, rec["generation"])
         mismatched += res.success != rec["success"]
         hits = {d.detector: d.hit for d in res.detections}
         for name, ok in variants(a, text, hits).items():
