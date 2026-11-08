@@ -30,7 +30,7 @@ def cell(f: dict[str, Any] | None) -> str:
     return f"{f['successes']}/{f['attempts']} ({f['rate']:.0%}, {lo:.0%} to {hi:.0%})"
 
 
-def scans_table(runs: list[str], title: str) -> None:
+def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
     reports = {r: load(f"scans/{r}.json") for r in runs}
     reports = {r: v for r, v in reports.items() if v is not None}
     if not reports:
@@ -53,14 +53,15 @@ def scans_table(runs: list[str], title: str) -> None:
         totals.append(f"**{s['successes']}/{s['attempts']}** ({s['successes'] / max(1, s['attempts']):.0%})")
     print("| **All attacks** | | " + " | ".join(totals) + " |")
     print("| Errors | | " + " | ".join(str(rep["summary"]["errors"]) for rep in reports.values()) + " |")
-    print(
-        "| Wall clock | | "
-        + " | ".join(
-            f"{rep.get('generation_wall_clock_s', rep['duration_s']) / 60:.0f} min"
-            for rep in reports.values()
+    if wall_clock:
+        print(
+            "| Wall clock | | "
+            + " | ".join(
+                f"{rep.get('generation_wall_clock_s', rep['duration_s']) / 60:.0f} min"
+                for rep in reports.values()
+            )
+            + " |"
         )
-        + " |"
-    )
 
 
 def detectors_table() -> None:
@@ -166,8 +167,10 @@ def ablation_table() -> None:
 def main() -> None:
     scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)")
     owasp_table(MODELS + APPS)
-    scans_table(APPS, "Demo application, vulnerable versus hardened (same Qwen2.5-1.5B backend)")
-    scans_table(["qwen2.5-1.5b-datasets"], "Public attack datasets on Qwen2.5-1.5B")
+    scans_table(
+        APPS, "Demo application, vulnerable versus hardened (same Qwen2.5-1.5B backend)", wall_clock=False
+    )
+    scans_table(["qwen2.5-1.5b-datasets"], "Public attack datasets on Qwen2.5-1.5B", wall_clock=False)
     ablation_table()
     detectors_table()
     speed_table()
