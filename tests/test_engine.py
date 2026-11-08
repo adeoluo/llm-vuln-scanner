@@ -180,3 +180,36 @@ def test_application_plan_has_unique_cache_keys() -> None:
     cfg = ScanConfig(profile=load_profile(root / "examples" / "demo-app.json"))
     plan = Scanner(RefusingModel(), cfg).plan()
     assert len({a.digest() for a in plan}) == len(plan)
+
+
+def test_only_runs_a_part_of_the_full_plan_with_identical_attempts() -> None:
+    full = {a.id: a.digest() for a in Scanner(NaiveModel(), ScanConfig()).plan()}
+    part = Scanner(NaiveModel(), ScanConfig(only=["encoding", "jailbreak"])).plan()
+    assert {a.probe for a in part} == {"encoding.obfuscation", "jailbreak.templates"}
+    assert all(full[a.id] == a.digest() for a in part)
+    # Planning the subset alone draws different canaries, which is why chunks use only=.
+    alone = Scanner(NaiveModel(), ScanConfig(probes=["encoding", "jailbreak"])).plan()
+    assert any(full[a.id] != a.digest() for a in alone)
+
+
+def test_chunks_with_only_fill_the_cache_of_the_full_scan(tmp_path: Path) -> None:
+    calls = [0]
+
+    def answer(a: Attempt) -> str:
+        calls[0] += 1
+        return "I can't help with that."
+
+    cache = tmp_path / "cache.jsonl"
+    for chunk in (["injection"], ["leakage", "disclosure"]):
+        Scanner(CallableTarget(answer), ScanConfig(probes=["injection", "leakage", "disclosure"], only=chunk,
+                                                   sample=3, cache_path=cache)).run()  # fmt: skip
+    before = calls[0]
+    rep = Scanner(CallableTarget(answer), ScanConfig(probes=["injection", "leakage", "disclosure"], sample=3,
+                                                     cache_path=cache)).run()  # fmt: skip
+    assert calls[0] == before and before == len(rep.results)
+    assert rep.to_dict()["config"]["only"] is None
+
+
+def test_only_must_stay_inside_the_planned_probes() -> None:
+    with pytest.raises(ValueError, match="outside the planned set"):
+        ScanConfig(probes=["injection"], only=["leakage"])
