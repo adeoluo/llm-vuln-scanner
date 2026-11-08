@@ -15,7 +15,7 @@ pytestmark = pytest.mark.skipif(not _backend.rust_available(), reason="Rust core
 
 # Characters whose Unicode properties agree across Python and Rust Unicode versions.
 ALPHABET = st.sampled_from(
-    [*list("abcxyzABCXYZ0123456789 -_.,:;/+=!?'\"\n\t`<>{}()$@#"), "\u200b", "\u2060", "\ufeff", "\U000e0041", "\U000e0062", "а", "е", "А", "о", "Ａ", "ｂ", "İ", "é", "ß", "Σ", "—", "½", "①"]
+    [*list("abcxyzABCXYZ0123456789 -_.,:;/+=!?'\"\n\t`<>{}()$@#"), "\u200b", "\u2060", "\ufeff", "\U000e0041", "\U000e0062", "а", "е", "А", "о", "Ａ", "ｂ", "İ", "é", "ß", "Σ", "\u2014", "½", "①"]
 )  # fmt: skip
 TEXT = st.text(alphabet=ALPHABET, max_size=80)
 

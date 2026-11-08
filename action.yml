@@ -1,0 +1,106 @@
+name: LLM Vuln Scanner
+description: Scan an LLM endpoint or application for OWASP LLM Top 10 vulnerabilities and upload SARIF.
+author: Adeolu Ogunnoiki
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  target:
+    description: "Target spec: openai:URL[#MODEL], app:URL, llamacpp:PATH, naive or refusing"
+    required: true
+  probes:
+    description: Comma list of probes or families ("default", "all", "injection", ...)
+    default: default
+  profile:
+    description: Application profile JSON (for app:URL targets)
+    default: ""
+  api-key-env:
+    description: Name of the environment variable that holds the endpoint API key
+    default: ""
+  sample:
+    description: At most N attempts per probe (empty for all)
+    default: ""
+  concurrency:
+    description: Parallel requests
+    default: "4"
+  fail-on:
+    description: Fail the step when a finding has at least this severity (low, medium, high, critical, never)
+    default: high
+  output-dir:
+    description: Directory for the JSON, HTML, SARIF, JUnit and Markdown reports
+    default: llm-vuln-scanner-reports
+  upload-sarif:
+    description: Upload the SARIF report to GitHub code scanning
+    default: "true"
+  version:
+    description: Package version or git ref to install (defaults to the action's own ref)
+    default: ""
+
+outputs:
+  sarif:
+    description: Path of the SARIF report
+    value: ${{ steps.scan.outputs.sarif }}
+  json:
+    description: Path of the JSON report
+    value: ${{ steps.scan.outputs.json }}
+  exit-code:
+    description: Scanner exit code (0 clean, 1 findings at or above fail-on, 2 aborted)
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+
+    - name: Install the scanner
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        if [ -n "$VERSION" ]; then
+          uv tool install "git+https://github.com/adeoluo/llm-vuln-scanner@$VERSION"
+        else
+          uv tool install "$ACTION_PATH"
+        fi
+
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        PROBES: ${{ inputs.probes }}
+        PROFILE: ${{ inputs.profile }}
+        API_KEY_ENV: ${{ inputs.api-key-env }}
+        SAMPLE: ${{ inputs.sample }}
+        CONCURRENCY: ${{ inputs.concurrency }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        OUT: ${{ inputs.output-dir }}
+      run: |
+        args=(scan --target "$TARGET" --probes "$PROBES" --concurrency "$CONCURRENCY"
+              --out "$OUT" --name llm-vuln-scan --fail-on "$FAIL_ON" --github --quiet)
+        [ -n "$PROFILE" ] && args+=(--profile "$PROFILE")
+        [ -n "$API_KEY_ENV" ] && args+=(--api-key-env "$API_KEY_ENV")
+        [ -n "$SAMPLE" ] && args+=(--sample "$SAMPLE")
+        set +e
+        llm-vuln-scanner "${args[@]}"
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "sarif=$OUT/llm-vuln-scan.sarif" >> "$GITHUB_OUTPUT"
+        echo "json=$OUT/llm-vuln-scan.json" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' && always() && steps.scan.outputs.exit-code != '2' }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
+        category: llm-vuln-scanner
+
+    - name: Fail on findings
+      shell: bash
+      env:
+        CODE: ${{ steps.scan.outputs.exit-code }}
+      run: exit "$CODE"

@@ -106,3 +106,43 @@ jobs:
         run: uv build
       - name: Build Docker image
         run: docker build -t ${{ github.event.repository.name }}:ci .
+
+  action:
+    name: GitHub Action self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Scan the simulated vulnerable model (expect findings)
+        id: vulnerable
+        continue-on-error: true
+        uses: ./
+        with:
+          target: naive
+          sample: "2"
+          fail-on: high
+          upload-sarif: "false"
+          output-dir: reports-naive
+
+      - name: Scan the simulated refusing model (expect a clean pass)
+        id: refusing
+        uses: ./
+        with:
+          target: refusing
+          sample: "2"
+          fail-on: low
+          upload-sarif: "false"
+          output-dir: reports-refusing
+
+      - name: Check exit codes and reports
+        env:
+          VULN: ${{ steps.vulnerable.outputs.exit-code }}
+          CLEAN: ${{ steps.refusing.outputs.exit-code }}
+        run: |
+          test "$VULN" = "1"
+          test "$CLEAN" = "0"
+          test -s reports-naive/llm-vuln-scan.sarif
+          python3 -c "import json; r = json.load(open('reports-naive/llm-vuln-scan.json')); assert r['summary']['vulnerable_probes'] > 0"
