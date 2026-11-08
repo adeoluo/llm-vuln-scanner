@@ -47,5 +47,5 @@ with regex matching (see the ablation table).
 
 ## Environmental and cost footprint
 All benchmarks ran on one Apple M1 laptop (8 GB, 8 cores) whose GPU was shared with
-another training job; a full default scan (540 attempts) of a 0.8B to 2B model took 37 to
-55 minutes there. No paid API was used.
+another training job; a full default scan (540 attempts) of one of the five 0.8B to 4B
+models took 19 to 85 minutes of generation time there. No paid API was used.

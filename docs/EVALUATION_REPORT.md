@@ -43,8 +43,6 @@ the commands that produce each results file are listed under Reproducibility.
   The refusal detectors are validated against human labels (XSTest v2) below, next to two
   references: ProtectAI distilroberta-base-rejection-v1 and Qwen3Guard-Gen-0.6B.
 
-## Results
-
 ## Scans of local models
 
 The default probe set against each model with no application around it: the system
