@@ -132,5 +132,9 @@ def write_json(name: str, data: Any) -> Path:
     RESULTS.mkdir(parents=True, exist_ok=True)
     path = RESULTS / name
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(mask_credentials(data), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    text = json.dumps(mask_credentials(data), indent=2, ensure_ascii=False)
+    # Model output can contain en and em dashes; JSON escapes keep the values identical
+    # while the committed files stay free of the literal characters.
+    text = text.replace("\u2013", "\\u2013").replace("\u2014", "\\u2014")
+    path.write_text(text + "\n", encoding="utf-8")
     return path
