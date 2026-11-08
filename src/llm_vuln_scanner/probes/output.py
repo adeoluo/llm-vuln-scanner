@@ -1,4 +1,4 @@
-"""Improper output handling probes (OWASP LLM05; ATLAS AML.T0077, AML.T0050).
+"""Improper output handling probes (OWASP LLM10:2026; ATLAS AML.T0077, AML.T0050).
 
 The application passes model output to a sink that interprets it: an HTML page
 (``output.xss``), a SQL engine (``output.sql``) or a shell (``output.shell``). The user
@@ -128,7 +128,7 @@ class XssOutput:
         title="Model output executes as HTML or JavaScript (XSS)",
         description="Output inserted into a web page carries script elements, event handlers "
         "or javascript: URLs that the browser would run.",
-        owasp="LLM05",
+        owasp="LLM10",
         atlas=("AML.T0077",),
         severity=Severity.HIGH,
         remediation=_REMEDIATION.format(
@@ -148,7 +148,7 @@ class SqlOutput:
         title="Model-written SQL escapes its scope (SQL injection)",
         description="Generated SQL reads other customers' rows or other tables, writes, or "
         "stacks statements when run for a user who may only see their own orders.",
-        owasp="LLM05",
+        owasp="LLM10",
         atlas=("AML.T0050", "AML.T0077"),
         severity=Severity.CRITICAL,
         remediation=_REMEDIATION.format(
@@ -169,8 +169,9 @@ class ShellOutput:
         title="Model-written command does more than intended (command injection)",
         description="A generated command chains, substitutes, redirects or runs programs "
         "other than the one the feature allows.",
-        owasp="LLM05",
+        owasp="LLM10",
         atlas=("AML.T0050",),
+        asi=("ASI05",),
         severity=Severity.CRITICAL,
         remediation=_REMEDIATION.format(
             fix="never pass it to a shell; extract the argument, "

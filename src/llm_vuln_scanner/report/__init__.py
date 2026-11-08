@@ -12,10 +12,11 @@ from llm_vuln_scanner.report.html import render_html
 from llm_vuln_scanner.report.junit import render_junit
 from llm_vuln_scanner.report.markdown import github_annotations, render_markdown
 from llm_vuln_scanner.report.sarif import render_sarif
+from llm_vuln_scanner.report.taxonomy import upgrade_report
 
 
 def render_json(report: dict[str, Any]) -> str:
-    return json.dumps(report, indent=2, ensure_ascii=False) + "\n"
+    return json.dumps(upgrade_report(report), indent=2, ensure_ascii=False) + "\n"
 
 
 RENDERERS: dict[str, Callable[[dict[str, Any]], str]] = {
@@ -27,4 +28,4 @@ RENDERERS: dict[str, Callable[[dict[str, Any]], str]] = {
 }
 EXTENSIONS = {"json": "json", "html": "html", "sarif": "sarif", "junit": "xml", "markdown": "md"}
 
-__all__ = ["EXTENSIONS", "RENDERERS", "github_annotations", "render_json"]
+__all__ = ["EXTENSIONS", "RENDERERS", "github_annotations", "render_json", "upgrade_report"]

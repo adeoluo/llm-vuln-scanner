@@ -20,7 +20,19 @@ from llm_vuln_scanner.report import EXTENSIONS, RENDERERS, github_annotations
 from llm_vuln_scanner.report.sarif import render_sarif
 from llm_vuln_scanner.stats import newcombe_diff
 from llm_vuln_scanner.targets import open_target
-from llm_vuln_scanner.taxonomy import ATLAS, OWASP, Severity
+from llm_vuln_scanner.taxonomy import (
+    AGENTIC,
+    ATLAS,
+    ATLAS_NAME,
+    ATLAS_VERSION,
+    OWASP,
+    OWASP_AGENTIC_NAME,
+    OWASP_AGENTIC_VERSION,
+    OWASP_LLM_NAME,
+    OWASP_LLM_VERSION,
+    Severity,
+    versions,
+)
 
 
 def _csv(s: str) -> list[str]:
@@ -60,11 +72,12 @@ def print_summary(report: dict[str, Any]) -> None:
     s = report["summary"]
     print(f"target {report['target']}: {s['vulnerable_probes']}/{s['probes']} probes vulnerable, "
           f"{s['successes']}/{s['attempts']} attacks succeeded, {report['duration_s']:.1f} s")  # fmt: skip
-    print(f"  {'severity':9s} {'probe':30s} {'owasp':6s} {'rate':>7s}  {'95% CI':>15s}  hits")
+    print(f"  {'severity':9s} {'probe':30s} {'owasp':10s} {'rate':>7s}  {'95% CI':>15s}  hits")
     for f in report["findings"]:
         lo, hi = f["ci95"]
         mark = "VULN" if f["vulnerable"] else "pass"
-        print(f"  {f['severity']:9s} {f['probe']:30s} {f['owasp']:6s} {f['rate']:7.1%}  "
+        owasp_ref = f.get("owasp_ref", f["owasp"])
+        print(f"  {f['severity']:9s} {f['probe']:30s} {owasp_ref:10s} {f['rate']:7.1%}  "
               f"{lo:6.1%} to {hi:6.1%}  {f['successes']}/{f['attempts']} {mark}")  # fmt: skip
 
 
@@ -116,17 +129,19 @@ def cmd_probes(a: argparse.Namespace) -> int:
             n = len(pr.get(name).attempts(ProbeContext(canaries=CanaryFactory(0))))
         except FileNotFoundError:
             n = -1
-        rows.append({"name": name, "title": info.title, "owasp": info.owasp, "atlas": list(info.atlas),
+        rows.append({"name": name, "title": info.title, "owasp": OWASP[info.owasp].ref,
+                     "asi": list(info.asi), "atlas": list(info.atlas),
                      "severity": info.severity.name.lower(), "attempts": n,
                      "default": name in pr.DEFAULT_PROBES})  # fmt: skip
     if a.json:
         print(json.dumps(rows, indent=2))
         return 0
-    print(f"{'probe':32s} {'owasp':6s} {'severity':9s} {'attempts':>8s}  atlas")
+    print(f"{'probe':32s} {'owasp':10s} {'agentic':12s} {'severity':9s} {'attempts':>8s}  atlas")
     for r in rows:
         count = "data" if int(str(r["attempts"])) < 0 else str(r["attempts"])
         atlas = ", ".join(str(x) for x in r["atlas"])  # type: ignore[attr-defined]
-        print(f"{r['name']!s:32s} {r['owasp']!s:6s} {r['severity']!s:9s} {count:>8s}  {atlas}")
+        agentic = ",".join(str(x) for x in r["asi"]) or "-"  # type: ignore[attr-defined]
+        print(f"{r['name']!s:32s} {r['owasp']!s:10s} {agentic:12s} {r['severity']!s:9s} {count:>8s}  {atlas}")
     return 0
 
 
@@ -138,15 +153,30 @@ def cmd_detectors(a: argparse.Namespace) -> int:
 
 def cmd_taxonomy(a: argparse.Namespace) -> int:
     infos = [pr.get(n).info for n in pr.names()]
-    print("OWASP Top 10 for LLM Applications (2025)")
-    for cid, cat in OWASP.items():
-        ps = [i.name for i in infos if i.owasp == cid]
-        print(f"  {cid} {cat.name:34s} {', '.join(ps) if ps else '(not covered)'}")
-    print("MITRE ATLAS techniques")
+    if a.json:
+        print(json.dumps({
+            "versions": versions(),
+            "owasp_llm": {c.ref: {"name": c.name, "url": c.url, "probes": [i.name for i in infos if i.owasp == k]}
+                          for k, c in OWASP.items()},
+            "owasp_agentic": {r.ref: {"name": r.name, "probes": [i.name for i in infos if k in i.asi]}
+                              for k, r in AGENTIC.items()},
+            "atlas": {k: {"name": t.display, "probes": [i.name for i in infos if k in i.atlas]}
+                      for k, t in ATLAS.items()},
+        }, indent=2))  # fmt: skip
+        return 0
+    print(f"{OWASP_LLM_NAME} {OWASP_LLM_VERSION}")
+    for cat in OWASP.values():
+        ps = [i.name for i in infos if i.owasp == cat.id]
+        print(f"  {cat.ref:10s} {cat.name:34s} {', '.join(ps) if ps else '(not covered)'}")
+    print(f"{OWASP_AGENTIC_NAME} {OWASP_AGENTIC_VERSION}")
+    for risk in AGENTIC.values():
+        ps = [i.name for i in infos if risk.id in i.asi]
+        print(f"  {risk.ref:10s} {risk.name:38s} {', '.join(ps) if ps else '(not covered)'}")
+    print(f"{ATLAS_NAME} v{ATLAS_VERSION} techniques")
     for tid, t in ATLAS.items():
         ps = [i.name for i in infos if tid in i.atlas]
         if ps:
-            print(f"  {tid:14s} {t.name:42s} {', '.join(ps)}")
+            print(f"  {tid:14s} {t.display:56s} {', '.join(ps)}")
     return 0
 
 
@@ -209,7 +239,8 @@ def cmd_serve(a: argparse.Namespace) -> int:
 
 def cmd_info(a: argparse.Namespace) -> int:
     print(json.dumps({"version": __version__, "rust_core": _backend.rust_available(),
-                      "probes": len(pr.names()), "detectors": len(det.available())}, indent=2))  # fmt: skip
+                      "probes": len(pr.names()), "detectors": len(det.available()),
+                      "taxonomy": versions()}, indent=2))  # fmt: skip
     return 0
 
 
@@ -250,7 +281,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_probes)
     sub.add_parser("detectors", help="list detectors").set_defaults(func=cmd_detectors)
-    sub.add_parser("taxonomy", help="OWASP and ATLAS coverage of the probes").set_defaults(func=cmd_taxonomy)
+    t = sub.add_parser("taxonomy", help="OWASP LLM 2026, OWASP Agentic 2026 and ATLAS v2026.10 coverage")
+    t.add_argument("--json", action="store_true", help="machine-readable output")
+    t.set_defaults(func=cmd_taxonomy)
     sub.add_parser("info", help="version and build details").set_defaults(func=cmd_info)
 
     r = sub.add_parser("report", help="re-render a JSON report in other formats")

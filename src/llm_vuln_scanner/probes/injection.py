@@ -1,4 +1,4 @@
-"""Prompt injection probes (OWASP LLM01; ATLAS AML.T0051).
+"""Prompt injection probes (OWASP LLM01:2026; ATLAS AML.T0051).
 
 ``injection.direct`` puts the attack in the user turn: goal hijacking templates from the
 PromptInject study (Perez and Ribeiro, 2022) and later variants (fake delimiters, fake

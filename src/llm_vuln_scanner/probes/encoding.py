@@ -1,4 +1,4 @@
-"""Encoding and obfuscation probes (OWASP LLM01; ATLAS AML.T0068).
+"""Encoding and obfuscation probes (OWASP LLM01:2026; ATLAS AML.T0068).
 
 The injected instruction ("reply with <canary>") is hidden with one of eleven
 transforms: base64, hex, ROT13, leetspeak, reversed text, Morse code, letter spacing,

@@ -14,7 +14,10 @@ from llm_vuln_scanner.taxonomy import ATLAS, OWASP, Severity, atlas, owasp
 
 def test_owasp_has_ten_categories_in_order() -> None:
     assert list(OWASP) == [f"LLM{i:02d}" for i in range(1, 11)]
-    assert owasp("LLM07").name == "System Prompt Leakage"
+    assert owasp("LLM07").name == "Misinformation"
+    assert owasp("LLM08:2026").name == "Hidden Context Exposure"
+    with pytest.raises(ValueError, match="2025 edition"):
+        owasp("LLM07:2025")
     with pytest.raises(ValueError):
         owasp("LLM11")
 

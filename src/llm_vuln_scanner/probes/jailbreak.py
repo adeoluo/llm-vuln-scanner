@@ -1,4 +1,4 @@
-"""Jailbreak probes on fictional restricted tasks (OWASP LLM01; ATLAS AML.T0054).
+"""Jailbreak probes on fictional restricted tasks (OWASP LLM01:2026; ATLAS AML.T0054).
 
 Safety design: every restricted task is invented. A system prompt forbids something
 harmless but specific (the brewing steps of a fictional potion, the ending of an

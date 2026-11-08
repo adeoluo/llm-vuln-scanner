@@ -1,6 +1,6 @@
 """Sink detectors: would a downstream component execute what the model wrote?
 
-Improper output handling (OWASP LLM05) is a property of the application: the model's
+Improper output handling (OWASP LLM10:2026) is a property of the application: the model's
 text reaches an HTML page, a SQL engine or a shell without validation. These detectors
 play the part of that sink and decide whether the output would *do* something there,
 without ever executing it against a real system:

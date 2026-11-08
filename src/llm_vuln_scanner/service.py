@@ -25,6 +25,7 @@ from llm_vuln_scanner import probes as pr
 from llm_vuln_scanner.engine import ScanConfig, Scanner
 from llm_vuln_scanner.report import RENDERERS
 from llm_vuln_scanner.targets import open_target
+from llm_vuln_scanner.taxonomy import OWASP
 
 MAX_BODY = 64 * 1024
 MAX_ATTEMPTS = 2000
@@ -133,8 +134,9 @@ def make_handler(state: ServiceState) -> type[BaseHTTPRequestHandler]:
                 self._send(200, state.metrics(), "text/plain; version=0.0.4")
             elif route == "/v1/probes":
                 infos = [pr.get(n).info for n in pr.names()]
-                self._send(200, json.dumps([{"name": i.name, "title": i.title, "owasp": i.owasp,
-                                             "atlas": list(i.atlas), "severity": i.severity.name.lower()}
+                self._send(200, json.dumps([{"name": i.name, "title": i.title, "owasp": OWASP[i.owasp].ref,
+                                             "asi": list(i.asi), "atlas": list(i.atlas),
+                                             "severity": i.severity.name.lower()}
                                             for i in infos]))  # fmt: skip
             else:
                 status = 404

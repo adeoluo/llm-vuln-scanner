@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Protocol
 
 from llm_vuln_scanner.canary import CanaryFactory
-from llm_vuln_scanner.taxonomy import ATLAS, OWASP, Severity
+from llm_vuln_scanner.taxonomy import AGENTIC, ATLAS, OWASP, Severity
 from llm_vuln_scanner.types import Attempt, ToolSpec
 
 
@@ -89,13 +89,17 @@ class ProbeInfo:
     severity: Severity
     remediation: str
     references: tuple[str, ...] = ()
+    asi: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.owasp not in OWASP:
-            raise ValueError(f"{self.name}: unknown OWASP category {self.owasp}")
+            raise ValueError(f"{self.name}: unknown OWASP LLM 2026 category {self.owasp}")
         for t in self.atlas:
             if t not in ATLAS:
                 raise ValueError(f"{self.name}: unknown ATLAS technique {t}")
+        for r in self.asi:
+            if r not in AGENTIC:
+                raise ValueError(f"{self.name}: unknown OWASP Agentic 2026 risk {r}")
 
 
 class Probe(Protocol):

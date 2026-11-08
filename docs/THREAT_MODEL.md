@@ -27,6 +27,23 @@ deliberately vulnerable demo application shipped for testing it.
 | Demo app misuse | Running the vulnerable app on a public interface | Real exposure | Binds to 127.0.0.1 by default; secrets are fictional; documentation marks it as vulnerable |
 | Supply chain | Malicious dependency | Code execution | Minimal runtime dependencies (numpy), `uv.lock`, CodeQL on main |
 
+## Risks the probes test in a scanned application
+The scanner's own threat model is above; what it looks for in a target follows the OWASP
+Top 10 for LLM Applications 2026, the OWASP Top 10 for Agentic Applications 2026 and
+MITRE ATLAS v2026.10 (full mapping in ADR-0007, `llm-vuln-scanner taxonomy`).
+
+| OWASP LLM 2026 | Probes | OWASP Agentic 2026 | ATLAS v2026.10 |
+|---|---|---|---|
+| LLM01 Prompt Injection | `injection.*`, `encoding.obfuscation`, `jailbreak.templates`, `dataset.tensortrust_hijacking`, `dataset.wild_jailbreak` | | AML.T0051, AML.T0068, AML.T0054, AML.T0070 |
+| LLM02 Sensitive Information Disclosure | `disclosure.secrets` | | AML.T0085.002, AML.T0055 |
+| LLM03 Excessive Agency | `agency.tools` | ASI01, ASI02 | AML.T0053, AML.T0086, AML.T0101 |
+| LLM06 Unbounded Consumption | `dos.token_blowup` | | AML.T0029, AML.T0034.001 |
+| LLM08 Hidden Context Exposure | `leakage.system_prompt`, `dataset.tensortrust_extraction`, `dataset.gandalf` | | AML.T0085.003, AML.T0069.002 |
+| LLM10 Improper Output Handling | `output.xss`, `output.sql`, `output.shell` | ASI05 (`output.shell`) | AML.T0077, AML.T0050 |
+
+LLM04 Supply Chain, LLM05 Data and Model Poisoning, LLM07 Misinformation and LLM09 Vector
+and Embedding Weaknesses are out of scope for black-box prompts.
+
 ## Residual risk
 Scans are a lower bound: a passing report does not prove the absence of vulnerabilities.
 Detector false negatives are measured where labels exist (XSTest) and discussed in the
