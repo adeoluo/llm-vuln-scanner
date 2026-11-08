@@ -44,6 +44,19 @@ MITRE ATLAS v2026.10 (full mapping in ADR-0007, `llm-vuln-scanner taxonomy`).
 LLM04 Supply Chain, LLM05 Data and Model Poisoning, LLM07 Misinformation and LLM09 Vector
 and Embedding Weaknesses are out of scope for black-box prompts.
 
+### NIST
+A scan is evidence for NIST AI RMF 1.0 MEASURE 2.7 (security and resilience are evaluated
+and documented) and MANAGE 2.4 (mechanisms to supersede or deactivate a system that does
+not perform as intended: the `--fail-on` gate). In the Generative AI Profile (NIST AI 600-1,
+July 2024) the probes cover the Information Security risk (prompt injection, output
+handling, agency, token blow-up), Data Privacy (`disclosure.secrets`) and Human-AI
+Configuration (unconfirmed high-impact tool calls in `agency.tools`). In the adversarial ML
+taxonomy NIST AI 100-2 E2025 (March 2025, the current edition), they are direct prompting
+attacks (`injection.direct`, `encoding.obfuscation`, `jailbreak.templates`, prompt
+extraction in `leakage.system_prompt`), indirect prompt injection (`injection.indirect`,
+`agency.tools`), and the privacy compromise and availability breakdown objectives
+(`disclosure.secrets`, `dos.token_blowup`).
+
 ## Residual risk
 Scans are a lower bound: a passing report does not prove the absence of vulnerabilities.
 Detector false negatives are measured where labels exist (XSTest) and discussed in the

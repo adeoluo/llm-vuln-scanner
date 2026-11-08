@@ -23,6 +23,7 @@ one attempt through the system.
 | | `detectors/refusal.py`, `judge.py` | keyword and trained refusal detectors, LLM judge |
 | | `rust/src/*.rs` (`lvs_rs`) | Aho-Corasick canary search, text views, bit-parallel LCS, hashed n-grams |
 | Reports | `report/*.py`, `stats.py` | JSON, HTML, SARIF 2.1.0, JUnit XML, Markdown; Wilson and Newcombe intervals |
+| | `report/taxonomy.py` | framework editions in every report; relabels reports from earlier builds (2025 identifiers) to the 2026 taxonomy |
 
 ## One attempt, end to end
 
@@ -38,7 +39,8 @@ one attempt through the system.
    attempt succeeds when any primary detector hits, or, for `rule="all"` (jailbreaks),
    when all of them do.
 4. Results are grouped per probe into findings: successes over attempts, a Wilson 95%
-   interval, up to three example responses, the OWASP and ATLAS mapping and a remediation.
+   interval, up to three example responses, the OWASP LLM 2026, OWASP Agentic 2026 and
+   ATLAS v2026.10 mapping and a remediation.
 5. Renderers write the report formats; the CLI applies the `--fail-on` severity gate.
 
 ## Failure handling

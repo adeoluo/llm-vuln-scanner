@@ -9,16 +9,31 @@ import json
 from pathlib import Path
 from typing import Any
 
-from common import RESULTS
+from common import MODELS as LOCAL_MODELS
+from common import PRIMARY, RESULTS
 
-MODELS = ["qwen2.5-0.5b", "qwen2.5-1.5b", "smollm2-1.7b", "qwen2.5-3b"]
+from llm_vuln_scanner.report import upgrade_report
+
+MODELS = list(LOCAL_MODELS)
 APPS = ["demo-vulnerable", "demo-hardened"]
 OWASP_ORDER = [f"LLM{i:02d}" for i in range(1, 11)]
 
 
 def load(name: str) -> dict[str, Any] | None:
     p = RESULTS / name
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    if not p.exists():
+        return None
+    data: dict[str, Any] = json.loads(p.read_text(encoding="utf-8"))
+    # A scan split into chunks of probes writes partial reports until its final full run.
+    expected = ["dataset"] if "datasets" in name else ["default"]
+    if (
+        name.startswith("scans/")
+        and not name.startswith("scans/demo-")
+        and data["config"]["probes"] != expected
+    ):
+        return None
+    # Scan reports always print with the current taxonomy (OWASP 2026, ATLAS v2026.10).
+    return upgrade_report(data) if name.startswith("scans/") else data
 
 
 def cell(f: dict[str, Any] | None) -> str:
@@ -38,11 +53,11 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
     probes: list[tuple[str, str]] = []
     for rep in reports.values():
         for f in rep["findings"]:
-            if (f["probe"], f["owasp"]) not in probes:
-                probes.append((f["probe"], f["owasp"]))
+            if (f["probe"], f["owasp_ref"]) not in probes:
+                probes.append((f["probe"], f["owasp_ref"]))
     probes.sort(key=lambda p: (p[1], p[0]))
     print(f"\n#### {title}\n")
-    print("| Probe | OWASP | " + " | ".join(reports) + " |")
+    print("| Probe | OWASP 2026 | " + " | ".join(reports) + " |")
     print("|---|---|" + "---|" * len(reports))
     by = {r: {f["probe"]: f for f in rep["findings"]} for r, rep in reports.items()}
     for probe, owasp in probes:
@@ -62,6 +77,24 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
             )
             + " |"
         )
+
+
+def models_table() -> None:
+    rows = [(k, load(f"scans/{k}.json")) for k in MODELS]
+    rows = [(k, r) for k, r in rows if r is not None]
+    if not rows:
+        return
+    print("\n#### Models scanned (llama.cpp, greedy, 4 parallel slots of 4,096 tokens)\n")
+    print("| Key | Model | Released | GGUF build | Quantization | Mean output tokens | Scan time |")
+    print("|---|---|---|---|---|---|---|")
+    for k, r in rows:
+        m = LOCAL_MODELS[k]
+        toks = [a["completion_tokens"] or 0 for a in r["attempts"]]
+        print(f"| {k} | [{m.model_id}](https://huggingface.co/{m.model_id}) | {m.released} | "
+              f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | "
+              f"{sum(toks) / max(1, len(toks)):.0f} | {r.get('generation_wall_clock_s', 0) / 60:.0f} min |")  # fmt: skip
+    version = rows[0][1].get("llama_cpp", "").replace("version: ", "")
+    print(f"\nServer: llama.cpp `llama-server` {version}.")
 
 
 def detectors_table() -> None:
@@ -104,7 +137,7 @@ def speed_table() -> None:
         )
 
 
-def garak_table(model: str = "qwen2.5-1.5b") -> None:
+def garak_table(model: str = PRIMARY) -> None:
     g = load(f"garak/{model}.json")
     ours = load(f"scans/{model}.json")
     if g is None or ours is None:
@@ -133,7 +166,7 @@ def owasp_table(runs: list[str]) -> None:
     reports = {r: v for r, v in reports.items() if v is not None}
     if not reports:
         return
-    print("\n#### OWASP LLM Top 10 (2025) coverage and attack success rate\n")
+    print("\n#### OWASP Top 10 for LLM Applications 2026: coverage and attack success rate\n")
     print("| Category | " + " | ".join(reports) + " |")
     print("|---|" + "---|" * len(reports))
     first = next(iter(reports.values()))
@@ -142,7 +175,19 @@ def owasp_table(runs: list[str]) -> None:
         for rep in reports.values():
             c = rep["owasp"][o]
             row.append(f"{c['successes']}/{c['attempts']} ({c['rate']:.0%})" if c["tested"] else "not tested")
-        print(f"| {o} {first['owasp'][o]['name']} | " + " | ".join(row) + " |")
+        print(f"| {o}:2026 {first['owasp'][o]['name']} | " + " | ".join(row) + " |")
+    print("\n#### OWASP Top 10 for Agentic Applications 2026: risks the agent and tool probes exercise\n")
+    print("| Risk | Probes | " + " | ".join(reports) + " |")
+    print("|---|---|" + "---|" * len(reports))
+    for rid, risk in first["agentic"].items():
+        if not risk["tested"]:
+            continue
+        row = []
+        for rep in reports.values():
+            c = rep["agentic"][rid]
+            row.append(f"{c['successes']}/{c['attempts']} ({c['rate']:.0%})" if c["tested"] else "not tested")
+        probes = ", ".join(f"`{p}`" for p in risk["probes"])
+        print(f"| {rid}:2026 {risk['name']} | {probes} | " + " | ".join(row) + " |")
 
 
 def ablation_table() -> None:
@@ -165,12 +210,14 @@ def ablation_table() -> None:
 
 
 def main() -> None:
-    scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)")
+    models_table()
+    scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)", wall_clock=False)
     owasp_table(MODELS + APPS)
+    label = LOCAL_MODELS[PRIMARY].label
     scans_table(
-        APPS, "Demo application, vulnerable versus hardened (same Qwen2.5-1.5B backend)", wall_clock=False
+        APPS, f"Demo application, vulnerable versus hardened (same {label} backend)", wall_clock=False
     )
-    scans_table(["qwen2.5-1.5b-datasets"], "Public attack datasets on Qwen2.5-1.5B", wall_clock=False)
+    scans_table([f"{PRIMARY}-datasets"], f"Public attack datasets on {label}", wall_clock=False)
     ablation_table()
     detectors_table()
     speed_table()

@@ -1,6 +1,6 @@
 # Definition of Done
 
-> Per-project checklist derived from the portfolio-wide [Standard](../../STANDARD.md).
+> Per-project checklist derived from the portfolio-wide README and engineering standard.
 > A PR is mergeable only when every applicable box is checked.
 
 ## Engineering

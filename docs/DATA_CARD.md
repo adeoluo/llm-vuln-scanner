@@ -9,10 +9,10 @@ them (about 6 MB) into `../.bench-data/llm-vuln-scanner/data/`.
 
 | Dataset | Source | Size used | Used for |
 |---|---|---|---|
-| Tensor Trust hijacking robustness v1 | [HumanCompatibleAI/tensor-trust-data](https://github.com/HumanCompatibleAI/tensor-trust-data) (Toyer et al., 2023) | 776 attacks | `dataset.tensortrust_hijacking` (LLM01) |
+| Tensor Trust hijacking robustness v1 | [HumanCompatibleAI/tensor-trust-data](https://github.com/HumanCompatibleAI/tensor-trust-data) (Toyer et al., 2023) | 776 attacks | `dataset.tensortrust_hijacking` (LLM01:2026) |
 | Tensor Trust extraction robustness v1 | same | 570 attacks | `dataset.tensortrust_extraction` (LLM08:2026) |
-| Lakera gandalf_ignore_instructions | [Hugging Face](https://huggingface.co/datasets/Lakera/gandalf_ignore_instructions) | 1,000 prompts (777 train, 111 validation, 112 test) | `dataset.gandalf` (LLM07) |
-| In-the-wild jailbreak prompts, 2023-12-25 | [TrustAIRLab](https://huggingface.co/datasets/TrustAIRLab/in-the-wild-jailbreak-prompts) (Shen et al., CCS 2024) | 1,405 prompts, 106 usable templates | `dataset.wild_jailbreak` (LLM01) |
+| Lakera gandalf_ignore_instructions | [Hugging Face](https://huggingface.co/datasets/Lakera/gandalf_ignore_instructions) | 1,000 prompts (777 train, 111 validation, 112 test) | `dataset.gandalf` (LLM08:2026) |
+| In-the-wild jailbreak prompts, 2023-12-25 | [TrustAIRLab](https://huggingface.co/datasets/TrustAIRLab/in-the-wild-jailbreak-prompts) (Shen et al., CCS 2024) | 1,405 prompts, 106 usable templates | `dataset.wild_jailbreak` (LLM01:2026) |
 | XSTest v2 model completions | [paul-rottger/xstest](https://github.com/paul-rottger/xstest) (Rottger et al., NAACL 2024) | 2,250 completions (450 prompts x 5 models) with human labels | training and evaluating the refusal detectors |
 
 ## Licensing

@@ -1,6 +1,6 @@
 # LLM Vuln Scanner
 
-> An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2025 and MITRE ATLAS.
+> An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2026, the OWASP Top 10 for Agentic Applications 2026 and MITRE ATLAS v2026.10.
 
 Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/llm-vuln-scanner
 
@@ -9,6 +9,7 @@ Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/llm-vu
 - [README](https://github.com/adeoluo/llm-vuln-scanner/blob/main/README.md): motivation, architecture, results, quickstart, usage, design decisions, testing, responsible ai, limitations, roadmap
 - [AGENTS.md](https://github.com/adeoluo/llm-vuln-scanner/blob/main/AGENTS.md): layout, commands and conventions for changing the code
 - [Architecture diagram](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/architecture/architecture.mmd): Mermaid source of the component diagram
+- [Architecture](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/ARCHITECTURE.md)
 - [Data Card: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/DATA_CARD.md)
 - [Definition of Done](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/DEFINITION_OF_DONE.md)
 - [Evaluation Report: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/EVALUATION_REPORT.md)
@@ -20,6 +21,7 @@ Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/llm-vu
 - [ADR-0004: Emulate the downstream sink instead of matching dangerous strings](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0004-sink-emulation-for-output-handling.md)
 - [ADR-0005: Cached, resumable scans that fail loudly on a dead target](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0005-cached-resumable-scans-that-fail-loudly.md)
 - [ADR-0006: A hashed n-gram logistic regression as the default refusal classifier](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0006-hashed-logistic-refusal-classifier.md)
+- [ADR-0007: Pin the taxonomies to OWASP LLM Top 10 2026, OWASP Agentic Top 10 2026 and ATLAS v2026.10](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0007-taxonomy-owasp-2026-and-atlas-v2026-10.md)
 - [ADR-NNNN: <short title>](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/template.md)
 - [Changelog](https://github.com/adeoluo/llm-vuln-scanner/blob/main/CHANGELOG.md): release history
 
@@ -45,20 +47,20 @@ Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/llm-vu
 - [src/llm_vuln_scanner/detectors/judge.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/judge.py): LLM judge: a local model grades whether a restricted request was answered.
 - [src/llm_vuln_scanner/detectors/refusal.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/refusal.py): Refusal detection: did the model decline a restricted request? Jailbreak probes ask for something the system prompt forbids (always a fictional task) and check two things: whether the compliance...
 - [src/llm_vuln_scanner/detectors/secrets.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/secrets.py): Secret formats: credentials and personal data shapes in model output.
-- [src/llm_vuln_scanner/detectors/sinks.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/sinks.py): Sink detectors: would a downstream component execute what the model wrote? Improper output handling (OWASP LLM05) is a property of the application: the model's text reaches an HTML page, a SQL engine...
+- [src/llm_vuln_scanner/detectors/sinks.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/sinks.py): Sink detectors: would a downstream component execute what the model wrote? Improper output handling (OWASP LLM10:2026) is a property of the application: the model's text reaches an HTML page, a SQL...
 - [src/llm_vuln_scanner/engine.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/engine.py): The scan engine: expands probes, queries the target, runs detectors, aggregates.
 - [src/llm_vuln_scanner/matching.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/matching.py): Canary search and system-prompt similarity, with a Rust core and a Python reference.
 - [src/llm_vuln_scanner/probes/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/__init__.py): Probes package; see :mod:`llm_vuln_scanner.probes.base`.
-- [src/llm_vuln_scanner/probes/agency.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/agency.py): Excessive agency probes (OWASP LLM06; ATLAS AML.T0053, AML.T0086).
+- [src/llm_vuln_scanner/probes/agency.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/agency.py): Excessive agency probes (OWASP LLM03:2026; Agentic ASI01, ASI02; ATLAS AML.T0053, AML.T0086).
 - [src/llm_vuln_scanner/probes/base.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/base.py): Probe interface, registry and the scan context probes build attempts from.
 - [src/llm_vuln_scanner/probes/datasets.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/datasets.py): Probes built from published attack datasets (opt-in, need ``--data-dir``).
-- [src/llm_vuln_scanner/probes/disclosure.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/disclosure.py): Sensitive information disclosure probes (OWASP LLM02; ATLAS AML.T0057, AML.T0055).
-- [src/llm_vuln_scanner/probes/dos.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/dos.py): Model denial of service probes (OWASP LLM10; ATLAS AML.T0029, AML.T0034.001).
-- [src/llm_vuln_scanner/probes/encoding.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/encoding.py): Encoding and obfuscation probes (OWASP LLM01; ATLAS AML.T0068).
-- [src/llm_vuln_scanner/probes/injection.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/injection.py): Prompt injection probes (OWASP LLM01; ATLAS AML.T0051).
-- [src/llm_vuln_scanner/probes/jailbreak.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/jailbreak.py): Jailbreak probes on fictional restricted tasks (OWASP LLM01; ATLAS AML.T0054).
-- [src/llm_vuln_scanner/probes/leakage.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/leakage.py): System prompt leakage probes (OWASP LLM07; ATLAS AML.T0056).
-- [src/llm_vuln_scanner/probes/output.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/output.py): Improper output handling probes (OWASP LLM05; ATLAS AML.T0077, AML.T0050).
+- [src/llm_vuln_scanner/probes/disclosure.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/disclosure.py): Sensitive information disclosure probes (OWASP LLM02:2026; ATLAS AML.T0085.002, AML.T0055).
+- [src/llm_vuln_scanner/probes/dos.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/dos.py): Model denial of service probes (OWASP LLM06:2026; ATLAS AML.T0029, AML.T0034.001).
+- [src/llm_vuln_scanner/probes/encoding.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/encoding.py): Encoding and obfuscation probes (OWASP LLM01:2026; ATLAS AML.T0068).
+- [src/llm_vuln_scanner/probes/injection.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/injection.py): Prompt injection probes (OWASP LLM01:2026; ATLAS AML.T0051).
+- [src/llm_vuln_scanner/probes/jailbreak.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/jailbreak.py): Jailbreak probes on fictional restricted tasks (OWASP LLM01:2026; ATLAS AML.T0054).
+- [src/llm_vuln_scanner/probes/leakage.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/leakage.py): System prompt leakage probes (OWASP LLM08:2026 Hidden Context Exposure; ATLAS AML.T0085.003).
+- [src/llm_vuln_scanner/probes/output.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/output.py): Improper output handling probes (OWASP LLM10:2026; ATLAS AML.T0077, AML.T0050).
 - [src/llm_vuln_scanner/probes/scenarios.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/scenarios.py): Fictional applications that model-mode probes wrap their attacks in.
 - [src/llm_vuln_scanner/report/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/__init__.py): Report renderers.
 - [src/llm_vuln_scanner/report/html.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/html.py): Self-contained HTML report (no external assets, every value HTML-escaped).

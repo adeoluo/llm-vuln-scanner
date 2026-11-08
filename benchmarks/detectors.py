@@ -2,6 +2,7 @@
 
     uv run --no-sync python benchmarks/detectors.py               # everything
     uv run --no-sync python benchmarks/detectors.py --skip-judge  # no LLM judge
+    uv run --no-sync python benchmarks/detectors.py --only-guard  # just the Qwen3Guard rows
 
 Every jailbreak probe decides "did the model answer the fictional restricted task?" with a
 refusal detector, so the scanner's numbers are only as good as these detectors. XSTest v2
@@ -21,8 +22,11 @@ Detectors compared (all predict "refusal"):
 * ``protectai distilroberta``: ProtectAI/distilroberta-base-rejection-v1, a public
   fine-tuned refusal classifier (reference model, no training here; it was trained on
   other data, so it is fully held out).
-* ``judge qwen2.5-1.5b``: the scanner's LLM judge with Qwen2.5-1.5B-Instruct (Q4_K_M,
-  llama.cpp, greedy). No verdict counts as "refusal" (the conservative choice for a
+* ``qwen3guard-gen-0.6b``: Qwen/Qwen3Guard-Gen-0.6B, a current open guard model, in its
+  response-moderation mode (user prompt plus completion in, "Refusal: Yes/No" out;
+  transformers on MPS, greedy, batches of 8). A reference that was not trained here.
+* ``judge qwen3.5-2b``: the scanner's LLM judge with Qwen3.5-2B (Q4_K_M, llama.cpp,
+  non-thinking mode, greedy). No verdict counts as "refusal" (the conservative choice for a
   scanner: a missing verdict never creates a finding). A judge call reads the prompt and
   a completion of up to 1,500 characters each, about 30 calls a minute on this laptop,
   so the judge runs on a seeded random sample (``--judge-sample``, default 1,000) and the
@@ -36,23 +40,21 @@ benchmarks/results/detectors.json.
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import time
 from collections.abc import Callable
 from contextlib import ExitStack
-from pathlib import Path
 from typing import Any
 
 import numpy as np
-from common import BENCH, XSTEST_MODELS, hardware, write_json, xstest_rows
+from common import BENCH, MODELS, PRIMARY, RESULTS, XSTEST_MODELS, hardware, write_json, xstest_rows
 
 from llm_vuln_scanner.detectors.judge import LlmJudge
 from llm_vuln_scanner.detectors.refusal import RefusalModel, keyword_refusal, xstest_strmatch
 
-HF = Path.home() / ".cache" / "huggingface" / "hub"
-QWEN = "models--Qwen--Qwen2.5-1.5B-Instruct-GGUF/snapshots/*/qwen2.5-1.5b-instruct-q4_k_m.gguf"
 PROTECTAI = "ProtectAI/distilroberta-base-rejection-v1"
+GUARD = "Qwen/Qwen3Guard-Gen-0.6B"
+JUDGE = MODELS[PRIMARY]
 
 
 def metrics(y: np.ndarray, p: np.ndarray, n_boot: int = 1000, seed: int = 0) -> dict[str, Any]:
@@ -127,13 +129,62 @@ def protectai(texts: list[str]) -> np.ndarray:
     return np.asarray(out, dtype=np.int64)
 
 
+def qwen3guard(rows: list[dict[str, Any]], batch: int = 8) -> tuple[np.ndarray, int]:
+    """Qwen3Guard-Gen-0.6B response moderation: refusal when it answers "Refusal: Yes".
+
+    Verdicts are cached in .bench-data (one JSON line per completion), so an interrupted
+    run resumes. Returns the predictions and the number of outputs without a refusal field
+    (counted as "complied", like the judge's missing verdicts)."""
+    import re
+
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    cache_path = BENCH / "cache" / "guard-xstest-qwen3guard-gen-0.6b.jsonl"
+    cache: dict[str, str] = {}
+    if cache_path.exists():
+        for line in cache_path.read_text(encoding="utf-8").splitlines():
+            row = json.loads(line)
+            cache[row["key"]] = row["output"]
+    todo = [r for r in rows if f"{r['model']}/{r['id']}" not in cache]
+    if todo:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+        tok = AutoTokenizer.from_pretrained(GUARD, padding_side="left")
+        model = AutoModelForCausalLM.from_pretrained(GUARD, dtype=torch.bfloat16).to(device).eval()
+        with cache_path.open("a", encoding="utf-8") as f:
+            for i in range(0, len(todo), batch):
+                chunk = todo[i : i + batch]
+                texts = [
+                    tok.apply_chat_template(
+                        [{"role": "user", "content": r["prompt"]},
+                         {"role": "assistant", "content": r["completion"][:4000] or " "}],
+                        tokenize=False,
+                    )
+                    for r in chunk
+                ]  # fmt: skip
+                enc = tok(texts, return_tensors="pt", padding=True).to(device)
+                with torch.inference_mode():
+                    out = model.generate(**enc, max_new_tokens=32, do_sample=False)
+                for r, ids in zip(chunk, out[:, enc["input_ids"].shape[1] :], strict=True):
+                    text = tok.decode(ids, skip_special_tokens=True)
+                    key = f"{r['model']}/{r['id']}"
+                    cache[key] = text
+                    f.write(json.dumps({"key": key, "output": text}) + "\n")
+                f.flush()
+                if (i // batch) % 25 == 0:
+                    print(f"  guard {i + len(chunk)}/{len(todo)} {time.strftime('%H:%M:%S')}", flush=True)
+    labels = [re.search(r"Refusal: (Yes|No)", cache[f"{r['model']}/{r['id']}"]) for r in rows]
+    missing = sum(m is None for m in labels)
+    return np.asarray([int(m is not None and m.group(1) == "Yes") for m in labels], dtype=np.int64), missing
+
+
 def judge(rows: list[dict[str, Any]], concurrency: int = 4) -> tuple[np.ndarray, int]:
-    """Qwen2.5-1.5B judge verdicts, cached in .bench-data so reruns are free."""
+    """Qwen3.5-2B judge verdicts, cached in .bench-data so reruns are free."""
     from concurrent.futures import ThreadPoolExecutor
 
     from llm_vuln_scanner.targets import LlamaCppServer
 
-    cache_path = BENCH / "cache" / "judge-xstest-qwen2.5-1.5b.jsonl"
+    cache_path = BENCH / "cache" / f"judge-xstest-{JUDGE.key}.jsonl"
     cache: dict[str, Any] = {}
     if cache_path.exists():
         for line in cache_path.read_text(encoding="utf-8").splitlines():
@@ -141,9 +192,9 @@ def judge(rows: list[dict[str, Any]], concurrency: int = 4) -> tuple[np.ndarray,
             cache[row["key"]] = row["verdict"]
     todo = [r for r in rows if f"{r['model']}/{r['id']}" not in cache]
     if todo:
-        gguf = glob.glob(str(HF / QWEN))[0]
         with ExitStack() as stack:
-            srv = stack.enter_context(LlamaCppServer(gguf, parallel=concurrency, ctx_per_slot=2048,
+            srv = stack.enter_context(LlamaCppServer(JUDGE.path(), parallel=concurrency, ctx_per_slot=2048,
+                                                     extra_args=JUDGE.extra_args,
                                                      log_path=str(BENCH / "logs" / "llama-judge.log")))  # fmt: skip
             j = LlmJudge(srv.target("judge"))
             f = cache_path.open("a", encoding="utf-8")
@@ -169,6 +220,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-judge", action="store_true")
     ap.add_argument("--skip-reference", action="store_true", help="skip the ProtectAI model")
+    ap.add_argument("--skip-guard", action="store_true", help="skip Qwen3Guard-Gen-0.6B")
+    ap.add_argument(
+        "--only-guard",
+        action="store_true",
+        help="run only the Qwen3Guard rows and merge them into detectors.json",
+    )
     ap.add_argument("--judge-sample", type=int, default=1000, help="completions the judge grades (seeded)")
     args = ap.parse_args()
     rows = xstest_rows()
@@ -194,9 +251,19 @@ def main() -> None:
         lambda: lomo(rows, sklearn_fit_predict),
         split="leave one answering model out",
     )
-    if not args.skip_reference:
+    if args.only_guard:
+        previous = json.loads((RESULTS / "detectors.json").read_text(encoding="utf-8"))
+        results.update(previous["detectors"])
+    if not args.skip_reference and not args.only_guard:
         record("protectai distilroberta", lambda: protectai(texts), model=PROTECTAI)
-    if not args.skip_judge:
+    if not args.skip_guard:
+        t0 = time.perf_counter()
+        pg, missing = qwen3guard(rows)
+        results["qwen3guard-gen-0.6b"] = {**metrics(y, pg), "seconds": round(time.perf_counter() - t0, 2),
+                                          "model": GUARD, "no_refusal_field": missing}  # fmt: skip
+        print(f"{'qwen3guard-gen-0.6b':28s} acc {results['qwen3guard-gen-0.6b']['accuracy']:.3f}  "
+              f"F1 {results['qwen3guard-gen-0.6b']['f1']:.3f}")  # fmt: skip
+    if not args.skip_judge and not args.only_guard:
         idx = np.sort(
             np.random.default_rng(0).choice(len(rows), size=min(args.judge_sample, len(rows)), replace=False)
         )
@@ -209,10 +276,10 @@ def main() -> None:
             [keyword_refusal(r["completion"]) or not r["completion"].strip() for r in sub], dtype=np.int64
         )
         sample = f"seeded random sample of {len(sub)}"
-        results["judge qwen2.5-1.5b"] = {**metrics(ys, pj), "seconds": round(dt, 2), "sample": sample,
-                                         "no_verdict": none, "model": "Qwen2.5-1.5B-Instruct Q4_K_M (llama.cpp)"}  # fmt: skip
+        results[f"judge {JUDGE.key}"] = {**metrics(ys, pj), "seconds": round(dt, 2), "sample": sample,
+                                         "no_verdict": none, "model": f"{JUDGE.label} (llama.cpp, non-thinking)"}  # fmt: skip
         results["keyword (judge sample)"] = {**metrics(ys, pk), "seconds": 0.0, "sample": sample}
-        for name in ("judge qwen2.5-1.5b", "keyword (judge sample)"):
+        for name in (f"judge {JUDGE.key}", "keyword (judge sample)"):
             print(f"{name:28s} acc {results[name]['accuracy']:.3f}  F1 {results[name]['f1']:.3f}")
     per_model = {m: {"n": sum(r["model"] == m for r in rows),
                      "refusal_rate": round(float(np.mean([r["label"] for r in rows if r["model"] == m])), 4)}

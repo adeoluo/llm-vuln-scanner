@@ -1,10 +1,24 @@
 cff-version: 1.2.0
-message: "If you use this work, please cite it."
-title: "Llm Vuln Scanner"
+message: "If you use this software, please cite it as below."
+type: software
+title: "LLM Vuln Scanner"
+abstract: "Vulnerability scanner for LLM applications and agents: prompt injection, sensitive information disclosure, excessive agency, output handling and jailbreak probes with canary detectors, mapped to the OWASP Top 10 for LLM Applications 2026, the OWASP Agentic Top 10 2026 and MITRE ATLAS v2026.10, with SARIF reports and a GitHub Action"
 authors:
   - family-names: "Ogunnoiki"
     given-names: "Adeolu"
-version: 0.1.0
-date-released: 2026-01-01
+version: "0.1.0"
+date-released: "2026-11-08"
 license: MIT
-url: "REPO_URL"
+repository-code: "https://github.com/adeoluo/llm-vuln-scanner"
+url: "https://github.com/adeoluo/llm-vuln-scanner"
+keywords:
+  - "github-actions"
+  - "llm-security"
+  - "mitre-atlas"
+  - "owasp"
+  - "prompt-injection"
+  - "red-teaming"
+  - "rust"
+  - "sarif"
+  - "ai-security"
+  - "owasp-llm-top-10"
