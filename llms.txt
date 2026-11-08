@@ -1,0 +1,67 @@
+# LLM Vuln Scanner
+
+> An automated vulnerability scanner for LLM applications, mapped to the OWASP Top 10 for LLM Applications 2025 and MITRE ATLAS.
+
+Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/llm-vuln-scanner
+
+## Docs
+
+- [README](https://github.com/adeoluo/llm-vuln-scanner/blob/main/README.md): motivation, architecture, results, quickstart, usage, design decisions, testing, responsible ai, limitations, roadmap
+- [AGENTS.md](https://github.com/adeoluo/llm-vuln-scanner/blob/main/AGENTS.md): layout, commands and conventions for changing the code
+- [Architecture diagram](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/architecture/architecture.mmd): Mermaid source of the component diagram
+- [Data Card: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/DATA_CARD.md)
+- [Definition of Done](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/DEFINITION_OF_DONE.md)
+- [Evaluation Report: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/EVALUATION_REPORT.md)
+- [Model and System Card: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/MODEL_CARD.md)
+- [Threat Model: LLM Vuln Scanner](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/THREAT_MODEL.md)
+- [ADR-0001: Record architecture decisions](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0001-record-architecture-decisions.md)
+- [ADR-0002: Canary tokens decide attack success](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0002-canary-tokens-decide-attack-success.md)
+- [ADR-0003: Rust core for detector hot loops, Python reference kept for parity](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0003-rust-core-with-python-reference.md)
+- [ADR-0004: Emulate the downstream sink instead of matching dangerous strings](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0004-sink-emulation-for-output-handling.md)
+- [ADR-0005: Cached, resumable scans that fail loudly on a dead target](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0005-cached-resumable-scans-that-fail-loudly.md)
+- [ADR-0006: A hashed n-gram logistic regression as the default refusal classifier](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/0006-hashed-logistic-refusal-classifier.md)
+- [ADR-NNNN: <short title>](https://github.com/adeoluo/llm-vuln-scanner/blob/main/docs/adr/template.md)
+- [Changelog](https://github.com/adeoluo/llm-vuln-scanner/blob/main/CHANGELOG.md): release history
+
+## Source
+
+- [rust/src/aho.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/aho.rs): Aho-Corasick automaton over bytes (Aho and Corasick, 1975).
+- [rust/src/canary.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/canary.rs): Canary search across all views; mirrors `llm_vuln_scanner.matching.find_canaries_py`.
+- [rust/src/lcs.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/lcs.rs): Bit-parallel longest common subsequence length.
+- [rust/src/lib.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/lib.rs): Rust core of llm-vuln-scanner.
+- [rust/src/ngrams.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/ngrams.rs): Hashed n-gram counts for the refusal classifier; mirrors `llm_vuln_scanner.detectors.refusal.ngram_counts_py` (input already normalized).
+- [rust/src/python.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/python.rs): PyO3 bindings, built by maturin into the `llm_vuln_scanner.lvs_rs` module.
+- [rust/src/views.rs](https://github.com/adeoluo/llm-vuln-scanner/blob/main/rust/src/views.rs): Text views searched by the canary detector; mirrors `llm_vuln_scanner.textviews`.
+- [src/llm_vuln_scanner/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/__init__.py): LLM Vuln Scanner: probes, detectors and reports for LLM application security testing.
+- [src/llm_vuln_scanner/canary.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/canary.py): Canary tokens: unique strings planted in prompts so that success is checked exactly.
+- [src/llm_vuln_scanner/cli.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/cli.py): Command-line interface: ``python -m llm_vuln_scanner <command>``.
+- [src/llm_vuln_scanner/demo_app/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/demo_app/__init__.py): The deliberately vulnerable demo application; see :mod:`llm_vuln_scanner.demo_app.app`.
+- [src/llm_vuln_scanner/demo_app/app.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/demo_app/app.py): A deliberately vulnerable LLM application for exercising the scanner.
+- [src/llm_vuln_scanner/detectors/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/__init__.py): Detectors package; see :mod:`llm_vuln_scanner.detectors.base`.
+- [src/llm_vuln_scanner/detectors/agency.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/agency.py): Excessive agency: tool calls the model should not have made.
+- [src/llm_vuln_scanner/detectors/base.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/base.py): Detectors decide, for one attempt and one response, whether the attack succeeded.
+- [src/llm_vuln_scanner/detectors/canary.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/canary.py): Canary detectors: planted tokens, system-prompt similarity and success regexes.
+- [src/llm_vuln_scanner/detectors/dos.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/dos.py): Model denial of service: output that runs to the token limit on request.
+- [src/llm_vuln_scanner/detectors/judge.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/judge.py): LLM judge: a local model grades whether a restricted request was answered.
+- [src/llm_vuln_scanner/detectors/refusal.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/refusal.py): Refusal detection: did the model decline a restricted request? Jailbreak probes ask for something the system prompt forbids (always a fictional task) and check two things: whether the compliance...
+- [src/llm_vuln_scanner/detectors/secrets.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/secrets.py): Secret formats: credentials and personal data shapes in model output.
+- [src/llm_vuln_scanner/detectors/sinks.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/detectors/sinks.py): Sink detectors: would a downstream component execute what the model wrote? Improper output handling (OWASP LLM05) is a property of the application: the model's text reaches an HTML page, a SQL engine...
+- [src/llm_vuln_scanner/engine.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/engine.py): The scan engine: expands probes, queries the target, runs detectors, aggregates.
+- [src/llm_vuln_scanner/matching.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/matching.py): Canary search and system-prompt similarity, with a Rust core and a Python reference.
+- [src/llm_vuln_scanner/probes/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/__init__.py): Probes package; see :mod:`llm_vuln_scanner.probes.base`.
+- [src/llm_vuln_scanner/probes/agency.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/agency.py): Excessive agency probes (OWASP LLM06; ATLAS AML.T0053, AML.T0086).
+- [src/llm_vuln_scanner/probes/base.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/base.py): Probe interface, registry and the scan context probes build attempts from.
+- [src/llm_vuln_scanner/probes/datasets.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/datasets.py): Probes built from published attack datasets (opt-in, need ``--data-dir``).
+- [src/llm_vuln_scanner/probes/disclosure.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/disclosure.py): Sensitive information disclosure probes (OWASP LLM02; ATLAS AML.T0057, AML.T0055).
+- [src/llm_vuln_scanner/probes/dos.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/dos.py): Model denial of service probes (OWASP LLM10; ATLAS AML.T0029, AML.T0034.001).
+- [src/llm_vuln_scanner/probes/encoding.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/encoding.py): Encoding and obfuscation probes (OWASP LLM01; ATLAS AML.T0068).
+- [src/llm_vuln_scanner/probes/injection.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/injection.py): Prompt injection probes (OWASP LLM01; ATLAS AML.T0051).
+- [src/llm_vuln_scanner/probes/jailbreak.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/jailbreak.py): Jailbreak probes on fictional restricted tasks (OWASP LLM01; ATLAS AML.T0054).
+- [src/llm_vuln_scanner/probes/leakage.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/leakage.py): System prompt leakage probes (OWASP LLM07; ATLAS AML.T0056).
+- [src/llm_vuln_scanner/probes/output.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/output.py): Improper output handling probes (OWASP LLM05; ATLAS AML.T0077, AML.T0050).
+- [src/llm_vuln_scanner/probes/scenarios.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/probes/scenarios.py): Fictional applications that model-mode probes wrap their attacks in.
+- [src/llm_vuln_scanner/report/__init__.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/__init__.py): Report renderers.
+- [src/llm_vuln_scanner/report/html.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/html.py): Self-contained HTML report (no external assets, every value HTML-escaped).
+- [src/llm_vuln_scanner/report/junit.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/junit.py): JUnit XML output: one test suite per probe, one test case per attempt.
+- [src/llm_vuln_scanner/report/markdown.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/markdown.py): Markdown summary (GitHub step summaries, pull request comments) and workflow annotations (``::error``/``::warning`` lines GitHub Actions turns into alerts).
+- [src/llm_vuln_scanner/report/sarif.py](https://github.com/adeoluo/llm-vuln-scanner/blob/main/src/llm_vuln_scanner/report/sarif.py): SARIF 2.1.0 output for GitHub code scanning and other SARIF consumers.
