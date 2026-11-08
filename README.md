@@ -22,8 +22,9 @@ tool that sends known attack techniques, decides objectively whether each one wo
 fails a CI build with a report developers can act on.
 
 This scanner sends 540 attack attempts across 11 probes (direct and indirect prompt
-injection, system prompt leakage, insecure output handling, excessive agency, sensitive
-information disclosure, encoding and obfuscation, jailbreak templates, token blow-up) plus
+injection, system prompt extraction, improper output handling, excessive agency,
+sensitive information disclosure, encoding and obfuscation, jailbreak templates, token
+blow-up) plus
 four public attack datasets, and decides success with exact checks: planted canary
 tokens, a SQLite sink that executes model-written SQL under a read-only authorizer, an
 HTML parser, a shell tokenizer and a tool-call log. Jailbreaks are only ever evaluated on
@@ -47,7 +48,8 @@ transformers, any OpenAI-compatible endpoint, or an application over HTTP such a
 bundled demo app), caching every response so scans resume and re-score offline. Detectors
 decide success (canary search over normalized and decoded views and LCS leakage in a Rust
 core, sink emulation for HTML, SQL and shell, refusal classifiers and an optional LLM
-judge), and findings are written as JSON, HTML, SARIF 2.1.0, JUnit XML and Markdown.
+judge), and findings are written as JSON, HTML, SARIF 2.1.0 (with the OWASP LLM 2026,
+OWASP Agentic 2026 and ATLAS v2026.10 taxonomies), JUnit XML and Markdown.
 More detail: [docs/adr/](docs/adr/).
 
 ## Results
@@ -349,8 +351,8 @@ uv run llm-vuln-scanner scan --target llamacpp:/path/to/model.gguf --fail-on hig
 
 | Command | Purpose |
 |---|---|
-| `scan --target SPEC` | Run probes and write reports (`--probes`, `--sample`, `--generations`, `--temperature`, `--seed`, `--concurrency`, `--profile`, `--judge`, `--cache`, `--format`, `--fail-on`, `--github`, `--max-consecutive-errors`) |
-| `probes`, `detectors`, `taxonomy` | List probes with OWASP and ATLAS mappings, detectors, and coverage |
+| `scan --target SPEC` | Run probes and write reports (`--probes`, `--sample`, `--generations`, `--temperature`, `--seed`, `--concurrency`, `--profile`, `--judge`, `--cache`, `--only`, `--format`, `--fail-on`, `--github`, `--max-consecutive-errors`) |
+| `probes`, `detectors`, `taxonomy` | List probes, detectors, and coverage of OWASP LLM 2026, OWASP Agentic 2026 and ATLAS v2026.10 (`--json`) |
 | `report FILE.json` | Re-render a JSON report as HTML, SARIF, JUnit or Markdown |
 | `compare A.json B.json` | Per-probe success rate differences with Newcombe 95% intervals |
 | `demo-app [--hardened]` | Run the deliberately vulnerable demo application (localhost only) |
@@ -371,7 +373,7 @@ from llm_vuln_scanner.targets import OpenAICompatTarget
 target = OpenAICompatTarget("http://127.0.0.1:8080/v1", model="local")
 report = Scanner(target, ScanConfig(probes=["injection", "leakage"], concurrency=4)).run()
 for f in report.findings:
-    print(f.probe, f.owasp, f.successes, f.attempts, f.vulnerable)
+    print(f.probe, f.owasp, f.asi, f.atlas, f.successes, f.attempts, f.vulnerable)
 ```
 
 ### GitHub Action
@@ -405,8 +407,10 @@ URLs. `docker compose up --build` starts the service next to the demo applicatio
 ### Reproducing the benchmarks
 
 ```bash
-make bench-setup data models   # transformers, pyarrow, sklearn; 6 MB of data; GGUF models
+make bench-setup data          # transformers, pyarrow, sklearn; 6 MB of data
+make models MODELS=qwen3.5-2b  # one GGUF at a time keeps disk use low (all: about 11 GB)
 make scans demo-scans dataset-scans detectors garak speed ablations
+make rescore                   # after a detector change: re-score every scan from the cache
 make evaluation                # prints every table above from benchmarks/results/
 ```
 
