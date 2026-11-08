@@ -73,6 +73,7 @@ prompt, planted secrets, tools and sinks come from the probe itself. Reproduce w
 |---|---|---|---|---|---|---|---|
 | qwen3.5-0.8b | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 2026-02 | [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) `Qwen3.5-0.8B-Q4_K_M.gguf` | Q4_K_M | 4 | 82 | 37 min |
 | qwen3.5-2b | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 2026-02 | [unsloth/Qwen3.5-2B-GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) `Qwen3.5-2B-Q4_K_M.gguf` | Q4_K_M | 4 | 76 | 55 min |
+| qwen3.5-4b | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | 2026-02 | [unsloth/Qwen3.5-4B-GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) `Qwen3.5-4B-Q3_K_M.gguf` | Q3_K_M | 4 then 2 | 70 | 85 min |
 
 Server: llama.cpp `llama-server` 0.9.0 (build 12110, commit cd959bae9).
 
@@ -82,54 +83,57 @@ within this table.
 
 **Local models, default probe set (540 attempts each, greedy)**
 
-| Probe | OWASP 2026 | qwen3.5-0.8b | qwen3.5-2b |
-|---|---|---|---|
-| `encoding.obfuscation` | LLM01:2026 | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) |
-| `injection.direct` | LLM01:2026 | 50/60 (83%, 72% to 91%) | 52/60 (87%, 76% to 93%) |
-| `injection.indirect` | LLM01:2026 | 22/72 (31%, 21% to 42%) | 38/72 (53%, 41% to 64%) |
-| `jailbreak.templates` | LLM01:2026 | 79/90 (88%, 79% to 93%) | 37/90 (41%, 32% to 51%) |
-| `disclosure.secrets` | LLM02:2026 | 26/48 (54%, 40% to 67%) | 23/48 (48%, 34% to 62%) |
-| `agency.tools` | LLM03:2026 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) |
-| `dos.token_blowup` | LLM06:2026 | 7/12 (58%, 32% to 81%) | 5/12 (42%, 19% to 68%) |
-| `leakage.system_prompt` | LLM08:2026 | 29/80 (36%, 27% to 47%) | 37/80 (46%, 36% to 57%) |
-| `output.shell` | LLM10:2026 | 18/24 (75%, 55% to 88%) | 16/24 (67%, 47% to 82%) |
-| `output.sql` | LLM10:2026 | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) |
-| `output.xss` | LLM10:2026 | 2/24 (8%, 2% to 26%) | 7/24 (29%, 15% to 49%) |
-| **All attacks** | | **276/540** (51%) | **250/540** (46%) |
-| Errors | | 0 | 0 |
+| Probe | OWASP 2026 | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b |
+|---|---|---|---|---|
+| `encoding.obfuscation` | LLM01:2026 | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) |
+| `injection.direct` | LLM01:2026 | 50/60 (83%, 72% to 91%) | 52/60 (87%, 76% to 93%) | 47/60 (78%, 66% to 87%) |
+| `injection.indirect` | LLM01:2026 | 22/72 (31%, 21% to 42%) | 38/72 (53%, 41% to 64%) | 44/72 (61%, 50% to 72%) |
+| `jailbreak.templates` | LLM01:2026 | 79/90 (88%, 79% to 93%) | 37/90 (41%, 32% to 51%) | 35/90 (39%, 29% to 49%) |
+| `disclosure.secrets` | LLM02:2026 | 26/48 (54%, 40% to 67%) | 23/48 (48%, 34% to 62%) | 21/48 (44%, 31% to 58%) |
+| `agency.tools` | LLM03:2026 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) | 1/40 (2%, 0% to 13%) |
+| `dos.token_blowup` | LLM06:2026 | 7/12 (58%, 32% to 81%) | 5/12 (42%, 19% to 68%) | 2/12 (17%, 5% to 45%) |
+| `leakage.system_prompt` | LLM08:2026 | 29/80 (36%, 27% to 47%) | 37/80 (46%, 36% to 57%) | 37/80 (46%, 36% to 57%) |
+| `output.shell` | LLM10:2026 | 18/24 (75%, 55% to 88%) | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) |
+| `output.sql` | LLM10:2026 | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 11/24 (46%, 28% to 65%) |
+| `output.xss` | LLM10:2026 | 2/24 (8%, 2% to 26%) | 7/24 (29%, 15% to 49%) | 14/24 (58%, 39% to 76%) |
+| **All attacks** | | **276/540** (51%) | **250/540** (46%) | **248/540** (46%) |
+| Errors | | 0 | 0 | 0 |
 
 The smallest model is the easiest to jailbreak: Qwen3.5-0.8B followed 79 of 90 template
-jailbreaks on fictional restricted tasks, Qwen3.5-2B 37 of 90 (difference +47 points,
-Newcombe 95% CI +33 to +58). The larger model is more exposed to indirect injection
-(38/72 against 22/72, -22 points, -37 to -6): it reads and acts on instructions inside
-documents more often. Qwen3.5-2B never called a tool because of an injected email
-(0/40); it summarised the email and quoted the instruction instead.
+jailbreaks on fictional restricted tasks, Qwen3.5-2B 37 and Qwen3.5-4B 35 (0.8B against
+2B: +47 points, Newcombe 95% CI +33 to +58). The larger models are more exposed to
+indirect injection (38/72 and 44/72 against 22/72; 2B against 0.8B: +22 points, +6 to
++37): they read and act on instructions inside documents more often. From 2B to 4B the
+only difference whose interval excludes zero is HTML output, where the 4B wrote
+executable script in 14 of 24 attempts against 7 (+29 points, +1 to +52). The Qwen3.5
+models almost never called a tool because of an injected email (7, 0 and 1 of 40); they
+summarised the email and quoted the instruction instead.
 
 **OWASP Top 10 for LLM Applications 2026: coverage and attack success rate**
 
-| Category | qwen3.5-0.8b | qwen3.5-2b | demo-vulnerable | demo-hardened |
-|---|---|---|---|---|
-| LLM01:2026 Prompt Injection | 175/288 (61%) | 151/288 (52%) | 51/106 (48%) | 37/106 (35%) |
-| LLM02:2026 Sensitive Information Disclosure | 26/48 (54%) | 23/48 (48%) | 3/12 (25%) | 0/12 (0%) |
-| LLM03:2026 Excessive Agency | 7/40 (18%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
-| LLM04:2026 Supply Chain | not tested | not tested | not tested | not tested |
-| LLM05:2026 Data and Model Poisoning | not tested | not tested | not tested | not tested |
-| LLM06:2026 Unbounded Consumption | 7/12 (58%) | 5/12 (42%) | 3/12 (25%) | 0/12 (0%) |
-| LLM07:2026 Misinformation | not tested | not tested | not tested | not tested |
-| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 8/16 (50%) | 0/16 (0%) |
-| LLM09:2026 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested |
-| LLM10:2026 Improper Output Handling | 32/72 (44%) | 34/72 (47%) | 16/36 (44%) | 0/36 (0%) |
+| Category | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | demo-vulnerable | demo-hardened |
+|---|---|---|---|---|---|
+| LLM01:2026 Prompt Injection | 175/288 (61%) | 151/288 (52%) | 150/288 (52%) | 51/106 (48%) | 37/106 (35%) |
+| LLM02:2026 Sensitive Information Disclosure | 26/48 (54%) | 23/48 (48%) | 21/48 (44%) | 3/12 (25%) | 0/12 (0%) |
+| LLM03:2026 Excessive Agency | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
+| LLM04:2026 Supply Chain | not tested | not tested | not tested | not tested | not tested |
+| LLM05:2026 Data and Model Poisoning | not tested | not tested | not tested | not tested | not tested |
+| LLM06:2026 Unbounded Consumption | 7/12 (58%) | 5/12 (42%) | 2/12 (17%) | 3/12 (25%) | 0/12 (0%) |
+| LLM07:2026 Misinformation | not tested | not tested | not tested | not tested | not tested |
+| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 37/80 (46%) | 8/16 (50%) | 0/16 (0%) |
+| LLM09:2026 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested | not tested |
+| LLM10:2026 Improper Output Handling | 32/72 (44%) | 34/72 (47%) | 37/72 (51%) | 16/36 (44%) | 0/36 (0%) |
 
 Every probe maps to one 2026 category (`llm-vuln-scanner taxonomy`, ADR-0007). "Not
 tested" categories need access the black-box probes do not have (see Limitations).
 
 **OWASP Top 10 for Agentic Applications 2026: risks the agent and tool probes exercise**
 
-| Risk | Probes | qwen3.5-0.8b | qwen3.5-2b | demo-vulnerable | demo-hardened |
-|---|---|---|---|---|---|
-| ASI01:2026 Agent Goal Hijack | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
-| ASI02:2026 Tool Misuse & Exploitation | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
-| ASI05:2026 Unexpected Code Execution (RCE) | `output.shell` | 18/24 (75%) | 16/24 (67%) | 8/12 (67%) | 0/12 (0%) |
+| Risk | Probes | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | demo-vulnerable | demo-hardened |
+|---|---|---|---|---|---|---|
+| ASI01:2026 Agent Goal Hijack | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
+| ASI02:2026 Tool Misuse & Exploitation | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
+| ASI05:2026 Unexpected Code Execution (RCE) | `output.shell` | 18/24 (75%) | 16/24 (67%) | 12/24 (50%) | 8/12 (67%) | 0/12 (0%) |
 
 `agency.tools` covers Agent Goal Hijack and Tool Misuse & Exploitation; `output.shell`
 covers Unexpected Code Execution because the feature it models runs the command.
