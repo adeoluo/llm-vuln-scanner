@@ -1,4 +1,4 @@
-.PHONY: atlas-snapshot help setup bench-setup lint format type test coverage rust-check rust-develop parity data models train-refusal scans demo-scans dataset-scans detectors garak speed ablations evaluation run demo-app diagram docker-build docker-up demo clean all changelog cut-release
+.PHONY: atlas-snapshot rescore help setup bench-setup lint format type test coverage rust-check rust-develop parity data models train-refusal scans demo-scans dataset-scans detectors garak speed ablations evaluation run demo-app diagram docker-build docker-up demo clean all changelog cut-release
 
 BENCH ?= ../.bench-data/llm-vuln-scanner
 
@@ -70,6 +70,9 @@ garak: ## garak on the same model (separate venv; see benchmarks/garak/README.md
 
 speed: ## Detector throughput, Rust versus Python
 	cd benchmarks && uv run --no-sync python speed.py
+
+rescore: ## Re-score every committed scan offline from the response cache (after a detector change)
+	cd benchmarks && uv run --no-sync python rescore.py
 
 ablations: ## Detector ablations re-scored on the stored scan responses
 	cd benchmarks && uv run --no-sync python ablations.py
