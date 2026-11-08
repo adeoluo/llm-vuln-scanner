@@ -45,11 +45,11 @@ def scans_table(runs: list[str], title: str, wall_clock: bool = True) -> None:
     probes: list[tuple[str, str]] = []
     for rep in reports.values():
         for f in rep["findings"]:
-            if (f["probe"], f["owasp"]) not in probes:
-                probes.append((f["probe"], f["owasp"]))
+            if (f["probe"], f["owasp_ref"]) not in probes:
+                probes.append((f["probe"], f["owasp_ref"]))
     probes.sort(key=lambda p: (p[1], p[0]))
     print(f"\n#### {title}\n")
-    print("| Probe | OWASP | " + " | ".join(reports) + " |")
+    print("| Probe | OWASP 2026 | " + " | ".join(reports) + " |")
     print("|---|---|" + "---|" * len(reports))
     by = {r: {f["probe"]: f for f in rep["findings"]} for r, rep in reports.items()}
     for probe, owasp in probes:
@@ -85,7 +85,8 @@ def models_table() -> None:
         print(f"| {k} | [{m.model_id}](https://huggingface.co/{m.model_id}) | {m.released} | "
               f"[{m.gguf_repo}](https://huggingface.co/{m.gguf_repo}) `{m.gguf_file}` | {m.quant} | "
               f"{sum(toks) / max(1, len(toks)):.0f} | {r.get('generation_wall_clock_s', 0) / 60:.0f} min |")  # fmt: skip
-    print(f"\nServer: {rows[0][1].get('llama_cpp', 'llama.cpp')}.")
+    version = rows[0][1].get("llama_cpp", "").replace("version: ", "")
+    print(f"\nServer: llama.cpp `llama-server` {version}.")
 
 
 def detectors_table() -> None:
@@ -202,7 +203,7 @@ def ablation_table() -> None:
 
 def main() -> None:
     models_table()
-    scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)")
+    scans_table(MODELS, "Local models, default probe set (540 attempts each, greedy)", wall_clock=False)
     owasp_table(MODELS + APPS)
     label = LOCAL_MODELS[PRIMARY].label
     scans_table(
