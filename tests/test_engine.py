@@ -27,7 +27,10 @@ def test_refusing_model_has_no_findings() -> None:
     assert rep.max_severity() is None
     d = rep.to_dict()
     assert d["summary"]["successes"] == 0
-    assert d["owasp"]["LLM03"]["tested"] is False
+    assert d["owasp"]["LLM04"]["tested"] is False  # Supply Chain needs the model artifact
+    assert d["owasp"]["LLM03"]["tested"] is True  # Excessive Agency (agency.tools)
+    assert d["agentic"]["ASI02"]["tested"] is True and d["agentic"]["ASI10"]["tested"] is False
+    assert d["taxonomy"] == {"owasp_llm": "2026", "owasp_agentic": "2026", "atlas": "2026.10"}
 
 
 def test_scan_is_deterministic_and_concurrency_invariant() -> None:
@@ -104,9 +107,12 @@ def test_config_validation() -> None:
 def test_report_dict_shape() -> None:
     rep = Scanner(NaiveModel(), ScanConfig(probes=["leakage"], sample=5)).run()
     d = rep.to_dict()
-    assert d["schema_version"] == "1" and d["config"]["sample"] == 5
+    assert d["schema_version"] == "2" and d["config"]["sample"] == 5
     f = d["findings"][0]
-    assert {"probe", "owasp", "atlas", "rate", "ci95", "examples", "breakdown"} <= set(f)
+    assert {"probe", "owasp", "owasp_ref", "owasp_url", "atlas", "atlas_names", "asi", "asi_names", "rate",
+            "ci95", "examples", "breakdown"} <= set(f)  # fmt: skip
+    assert f["owasp_ref"] == "LLM08:2026" and f["owasp_name"] == "Hidden Context Exposure"
+    assert f["atlas_names"][0] == "Data from AI Services: System Instructions"
     assert len(d["attempts"]) == 5
     assert "attempts" not in rep.to_dict(include_attempts=False)
 
