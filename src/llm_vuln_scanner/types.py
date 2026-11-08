@@ -113,6 +113,9 @@ class Attempt:
             "tools": [asdict(t) for t in self.tools],
             "max_tokens": self.max_tokens,
         }
+        # Application targets receive the untrusted document separately from the messages.
+        if self.meta.get("document"):
+            payload["document"] = self.meta["document"]
         raw = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()
         return hashlib.sha256(raw).hexdigest()[:24]
 
