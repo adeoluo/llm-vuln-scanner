@@ -20,12 +20,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        # Every CPython release the runtime and validation dependencies publish wheels for.
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
 
@@ -34,6 +35,10 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Install dependencies (builds the Rust core)
         run: uv sync --dev --group validation --python ${{ matrix.python-version }}
@@ -53,7 +58,7 @@ jobs:
         run: uv run --no-sync pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload coverage
-        if: matrix.python-version == '3.12'
+        if: matrix.python-version == '3.14'
         uses: actions/upload-artifact@v7
         with:
           name: coverage
@@ -71,12 +76,16 @@ jobs:
           components: clippy, rustfmt
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
 
       - name: Format, lint and unit tests
         working-directory: rust
@@ -87,7 +96,7 @@ jobs:
           cargo test
 
       - name: Build the package with its Rust core
-        run: uv sync --dev --python 3.12
+        run: uv sync --dev --python 3.14
 
       - name: Parity tests (Rust versus Python)
         env:
@@ -101,7 +110,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10
       - name: Build package
         run: uv build
       - name: Build Docker image
