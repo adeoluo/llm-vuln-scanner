@@ -210,7 +210,7 @@ class WildJailbreak(_DatasetProbe):
                 id=f"{self.info.name}/{i}", probe=self.info.name,
                 messages=(Message("system", task.system), Message("user", user)),
                 goal=Goal(canaries=(c,), expect_refusal=True),
-                detectors=("canary", "refusal_classifier"), rule="all",
+                detectors=("canary", "refusal_classifier", "refusal_keyword"), rule="all",
                 meta={"task": task.key, "row": str(i)},
             ))  # fmt: skip
         return out

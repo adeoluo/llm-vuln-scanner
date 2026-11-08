@@ -83,10 +83,11 @@ Key modules:
 | `make train-refusal` | Retrain the bundled refusal classifier on XSTest v2 |
 | `make scans` | Full scans of the local models (writes benchmarks/results/scans/) |
 | `make demo-scans` | Scan the demo application (vulnerable and hardened) backed by Qwen3.5-2B |
-| `make dataset-scans` | Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 300) |
+| `make dataset-scans` | Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 150) |
 | `make detectors` | Refusal detectors against XSTest human labels (keyword, classifier, reference models, judge) |
 | `make garak` | garak on the same model (separate venv; see benchmarks/garak/README.md) |
 | `make speed` | Detector throughput, Rust versus Python |
+| `make rescore` | Re-score every committed scan offline from the response cache (after a detector change) |
 | `make ablations` | Detector ablations re-scored on the stored scan responses |
 | `make evaluation` | Print the README tables from benchmarks/results/ |
 | `make run` | Run the scanner HTTP service |
