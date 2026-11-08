@@ -14,7 +14,7 @@ texts per second. Kernels:
 * n-gram hashing: the refusal classifier's feature extraction (FNV-1a hashed word and
   character n-grams);
 * text views: the skeleton, unleet, reverse, rot13 and decoded base64/hex/morse views;
-* end to end: re-scoring every attempt of the Qwen2.5-1.5B scan (540 cached responses)
+* end to end: re-scoring every attempt of the Qwen3.5-2B scan (540 stored responses)
   with all of its detectors, with and without the Rust core.
 
 A scaling curve for the LCS kernel uses synthetic token sequences of 100 to 20,000 tokens.
@@ -57,12 +57,12 @@ def timeit(fn: Callable[[], Any], repeats: int = REPEATS) -> float:
 
 
 def rescoring(rust: bool) -> Callable[[], Any]:
-    """Re-run every detector of the Qwen2.5-1.5B scan on its stored responses."""
+    """Re-run every detector of the Qwen3.5-2B scan on its stored responses."""
     from llm_vuln_scanner import ScanConfig, Scanner
     from llm_vuln_scanner.targets.mock import RefusingModel
     from llm_vuln_scanner.types import Response
 
-    report = json.loads((RESULTS / "scans" / "qwen2.5-1.5b.json").read_text(encoding="utf-8"))
+    report = json.loads((RESULTS / "scans" / "qwen3.5-2b.json").read_text(encoding="utf-8"))
     cfg = ScanConfig(seed=report["config"]["seed"])
     scanner = Scanner(RefusingModel(), cfg)
     attempts = {a.id: a for a in scanner.plan()}

@@ -1,4 +1,4 @@
-.PHONY: help setup bench-setup lint format type test coverage rust-check rust-develop parity data models train-refusal scans demo-scans dataset-scans detectors garak speed ablations evaluation run demo-app diagram docker-build docker-up demo clean all changelog cut-release
+.PHONY: atlas-snapshot help setup bench-setup lint format type test coverage rust-check rust-develop parity data models train-refusal scans demo-scans dataset-scans detectors garak speed ablations evaluation run demo-app diagram docker-build docker-up demo clean all changelog cut-release
 
 BENCH ?= ../.bench-data/llm-vuln-scanner
 
@@ -44,22 +44,25 @@ data: ## Download the public datasets (about 6 MB, outside the repository)
 	scripts/download_data.sh $(BENCH)/data
 	uv run --group data python scripts/prepare_data.py --data $(BENCH)/data
 
-models: ## Download the local models into the Hugging Face cache (about 5 GB)
-	scripts/download_models.sh
+models: ## Download the local models into the Hugging Face cache (about 11 GB; MODELS="qwen3.5-2b ..." for a subset)
+	scripts/download_models.sh $(MODELS)
+
+atlas-snapshot: ## Rewrite tests/data/atlas-2026.10-techniques.json from the ATLAS v2026.10 release asset
+	uv run --no-sync --with pyyaml python scripts/atlas_snapshot.py --version 2026.10
 
 train-refusal: ## Retrain the bundled refusal classifier on XSTest v2
 	uv run --no-sync python benchmarks/train_refusal.py
 
 scans: ## Full scans of the local models (writes benchmarks/results/scans/)
-	cd benchmarks && for m in qwen2.5-0.5b qwen2.5-1.5b smollm2-1.7b qwen2.5-3b; do uv run --no-sync python scan_models.py --model $$m || exit 1; done
+	cd benchmarks && for m in qwen3.5-0.8b qwen3.5-2b qwen3.5-4b gemma-4-e2b granite-4.2-3b; do uv run --no-sync python scan_models.py --model $$m || exit 1; done
 
-demo-scans: ## Scan the demo application (vulnerable and hardened) backed by Qwen2.5-1.5B
+demo-scans: ## Scan the demo application (vulnerable and hardened) backed by Qwen3.5-2B
 	cd benchmarks && uv run --no-sync python scan_models.py --model demo-vulnerable && uv run --no-sync python scan_models.py --model demo-hardened
 
-dataset-scans: ## Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen2.5-1.5B
-	cd benchmarks && uv run --no-sync python scan_models.py --model qwen2.5-1.5b --run qwen2.5-1.5b-datasets --probes dataset
+dataset-scans: ## Tensor Trust, Gandalf and in-the-wild jailbreak probes on Qwen3.5-2B (seeded samples of 300)
+	cd benchmarks && uv run --no-sync python scan_models.py --model qwen3.5-2b --run qwen3.5-2b-datasets --probes dataset --sample 300
 
-detectors: ## Refusal detectors against XSTest human labels (keyword, classifier, reference model, judge)
+detectors: ## Refusal detectors against XSTest human labels (keyword, classifier, reference models, judge)
 	cd benchmarks && uv run --no-sync python detectors.py
 
 garak: ## garak on the same model (separate venv; see benchmarks/garak/README.md)
