@@ -109,3 +109,49 @@ def test_report_dict_shape() -> None:
     assert {"probe", "owasp", "atlas", "rate", "ci95", "examples", "breakdown"} <= set(f)
     assert len(d["attempts"]) == 5
     assert "attempts" not in rep.to_dict(include_attempts=False)
+
+
+def _flaky(fail_from: int) -> CallableTarget:
+    calls = [0]
+
+    def fn(attempt: Attempt) -> str:
+        calls[0] += 1
+        if calls[0] > fail_from:
+            raise ConnectionRefusedError("server is gone")
+        return "I cannot help with that."
+
+    return CallableTarget(fn, name="flaky")
+
+
+def test_scan_aborts_after_consecutive_errors() -> None:
+    from llm_vuln_scanner.engine import ScanAbortedError
+
+    cfg = ScanConfig(probes=["injection"], max_consecutive_errors=3)
+    with pytest.raises(ScanAbortedError, match="3 consecutive target errors; last: ConnectionRefusedError"):
+        Scanner(_flaky(fail_from=1), cfg).run()
+
+
+def test_errors_without_guard_are_recorded_not_raised() -> None:
+    rep = Scanner(_flaky(fail_from=1), ScanConfig(probes=["injection"])).run()
+    d = rep.to_dict()
+    assert d["summary"]["errors"] == len(d["attempts"]) - 1
+    assert d["config"]["max_consecutive_errors"] is None
+
+
+def test_isolated_errors_reset_the_streak() -> None:
+    calls = [0]
+
+    def fn(attempt: Attempt) -> str:
+        calls[0] += 1
+        if calls[0] % 2 == 0:
+            raise TimeoutError("slow")
+        return "no"
+
+    cfg = ScanConfig(probes=["injection"], max_consecutive_errors=2)
+    rep = Scanner(CallableTarget(fn, name="alt"), cfg).run()
+    assert rep.to_dict()["summary"]["errors"] > 0
+
+
+def test_max_consecutive_errors_validation() -> None:
+    with pytest.raises(ValueError, match="max_consecutive_errors"):
+        ScanConfig(max_consecutive_errors=0)

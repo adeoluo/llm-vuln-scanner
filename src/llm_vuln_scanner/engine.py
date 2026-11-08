@@ -51,6 +51,7 @@ class ScanConfig:
     profile: AppProfile | None = None
     extra_detectors: tuple[str, ...] = ()
     disabled_detectors: tuple[str, ...] = ()
+    max_consecutive_errors: int | None = None
 
     def __post_init__(self) -> None:
         if self.generations < 1:
@@ -61,6 +62,8 @@ class ScanConfig:
             raise ValueError("temperature must be non-negative")
         if self.sample is not None and self.sample < 1:
             raise ValueError("sample must be at least 1")
+        if self.max_consecutive_errors is not None and self.max_consecutive_errors < 1:
+            raise ValueError("max_consecutive_errors must be at least 1")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -70,6 +73,7 @@ class ScanConfig:
             "sample": self.sample, "profile": self.profile.name if self.profile else None,
             "extra_detectors": list(self.extra_detectors),
             "disabled_detectors": list(self.disabled_detectors),
+            "max_consecutive_errors": self.max_consecutive_errors,
         }  # fmt: skip
 
 
@@ -110,6 +114,11 @@ class ResponseCache:
 
 
 Progress = Callable[[int, int], None]
+
+
+class ScanAbortedError(RuntimeError):
+    """The target failed ``max_consecutive_errors`` times in a row (for example a model
+    server that crashed), so the rest of the scan would only record errors."""
 
 
 class Scanner:
@@ -181,6 +190,7 @@ class Scanner:
         jobs = [(a, g) for a in attempts for g in range(cfg.generations)]
         total = len(jobs)
         done = [0]
+        streak = [0]
         lock = threading.Lock()
         started = datetime.now(UTC)
         t0 = time.perf_counter()
@@ -197,6 +207,13 @@ class Scanner:
                 except Exception as exc:  # a failing target must not abort the scan
                     resp = Response(text="", error=f"{type(exc).__name__}: {exc}")
                 cache.put(key, resp)
+                if cfg.max_consecutive_errors is not None:
+                    with lock:
+                        streak[0] = streak[0] + 1 if resp.error else 0
+                        if streak[0] >= cfg.max_consecutive_errors:
+                            raise ScanAbortedError(
+                                f"{streak[0]} consecutive target errors; last: {resp.error}"
+                            )
             result = self.evaluate(attempt, resp, g)
             if self.progress is not None:
                 with lock:

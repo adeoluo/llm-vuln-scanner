@@ -120,3 +120,14 @@ def test_cli_profile_and_judge(tmp_path: Path, serve_http: Any) -> None:
                      "--out", str(tmp_path), "--quiet", "--format", "json"]) == 0  # fmt: skip
     rep = json.loads((tmp_path / "scan.json").read_text())
     assert any(d["detector"] == "judge" for a in rep["attempts"] for d in a["detections"])
+
+
+def test_cli_scan_aborts_when_target_is_down(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    from llm_vuln_scanner.targets.openai_compat import free_port
+
+    url = f"openai:http://127.0.0.1:{free_port()}/v1"
+    code = cli.main(["scan", "--target", url, "--probes", "dos", "--sample", "3", "--out", str(tmp_path),
+                     "--max-consecutive-errors", "1", "--quiet"])  # fmt: skip
+    assert code == 2
+    assert "scan aborted: 1 consecutive target errors" in capsys.readouterr().err
+    assert not list(tmp_path.iterdir())
