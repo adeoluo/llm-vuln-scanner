@@ -9,14 +9,18 @@ the commands that produce each results file are listed under Reproducibility.
   network on the same GPU during most runs, so wall-clock times are upper bounds); one
   heavy job at a time, peak memory under 3 GB.
 - **Targets:** the current small open instruction models, as GGUF builds served by
-  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 4 parallel slots of 4,096 tokens:
-  - Qwen3.5-0.8B and Qwen3.5-2B (Q4_K_M) and Qwen3.5-4B (Q3_K_M, which keeps the server
-    under about 2.7 GB), released February 2026, from the unsloth GGUF builds. Qwen3.5 is
+  llama.cpp 0.9.0 (b9.0, build 12110) `llama-server` with 2 or 4 parallel slots of 4,096 tokens (per model in the first table):
+  - Qwen3.5-0.8B and Qwen3.5-2B (Q4_K_M) and Qwen3.5-4B (Q3_K_M, about 2.9 GB of server
+    memory with 4 slots; it continued with 2 slots when the machine started swapping),
+    released February 2026, from the unsloth GGUF builds. Qwen3.5 is
     a hybrid reasoning model that thinks by default; the scans use its non-thinking mode
     (`--chat-template-kwargs '{"enable_thinking": false}'`), the usual setting for a chat
     feature with a latency budget;
-  - gemma-4-E2B-it (Google's quantization-aware Q4_0 build), released March 2026;
-  - granite-4.2-3b (IBM's Q4_K_M build), released August 2026;
+  - gemma-4-E2B-it (Google's quantization-aware Q4_0 build), released March 2026, and
+    granite-4.2-3b (IBM's Q4_K_M build), released August 2026, both with
+    `llama-server --reasoning off` and 2 slots. Gemma 4 also thinks by default under
+    llama.cpp; a first run in that mode spent most of each token budget on hidden
+    reasoning (empty answers cut at the budget) and was discarded;
   - the bundled demo application ("Northwind Kettles support") in vulnerable and hardened
     mode, backed by Qwen3.5-2B.
 - **Probe set:** the default set of 11 probes (540 attempts against a bare model, 222
@@ -47,71 +51,78 @@ prompt, planted secrets, tools and sinks come from the probe itself. Reproduce w
 
 ### Models scanned (llama.cpp, greedy, parallel slots of 4,096 tokens)
 
-| Key | Model | Released | GGUF build | Quantization | Slots | Mean output tokens | Scan time |
-|---|---|---|---|---|---|---|---|
-| qwen3.5-0.8b | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 2026-02 | [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) `Qwen3.5-0.8B-Q4_K_M.gguf` | Q4_K_M | 4 | 82 | 37 min |
-| qwen3.5-2b | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 2026-02 | [unsloth/Qwen3.5-2B-GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) `Qwen3.5-2B-Q4_K_M.gguf` | Q4_K_M | 4 | 76 | 55 min |
-| qwen3.5-4b | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | 2026-02 | [unsloth/Qwen3.5-4B-GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) `Qwen3.5-4B-Q3_K_M.gguf` | Q3_K_M | 4 then 2 | 70 | 85 min |
+| Key | Model | Released | GGUF build | Quantization | Thinking off | Slots | Mean output tokens | Scan time |
+|---|---|---|---|---|---|---|---|---|
+| qwen3.5-0.8b | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 2026-02 | [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) `Qwen3.5-0.8B-Q4_K_M.gguf` | Q4_K_M | `enable_thinking: false` | 4 | 82 | 37 min |
+| qwen3.5-2b | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 2026-02 | [unsloth/Qwen3.5-2B-GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) `Qwen3.5-2B-Q4_K_M.gguf` | Q4_K_M | `enable_thinking: false` | 4 | 76 | 55 min |
+| qwen3.5-4b | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | 2026-02 | [unsloth/Qwen3.5-4B-GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF) `Qwen3.5-4B-Q3_K_M.gguf` | Q3_K_M | `enable_thinking: false` | 4 then 2 | 70 | 85 min |
+| gemma-4-e2b | [google/gemma-4-E2B-it](https://huggingface.co/google/gemma-4-E2B-it) | 2026-03 | [google/gemma-4-E2B-it-qat-q4_0-gguf](https://huggingface.co/google/gemma-4-E2B-it-qat-q4_0-gguf) `gemma-4-E2B_q4_0-it.gguf` | Q4_0 QAT | `--reasoning off` | 2 | 51 | 19 min |
+| granite-4.2-3b | [ibm-granite/granite-4.2-3b](https://huggingface.co/ibm-granite/granite-4.2-3b) | 2026-08 | [ibm-granite/granite-4.2-3b-GGUF](https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF) `granite-4.2-3b-Q4_K_M.gguf` | Q4_K_M | `--reasoning off` | 2 | 95 | 54 min |
 
 Server: llama.cpp `llama-server` 0.9.0 (build 12110, commit cd959bae9).
 
-Mean output tokens is over all 540 attempts; scan time is generation time on the shared
-GPU (another project trained a network on it during most runs), so it is comparable only
-within this table.
+Mean output tokens is over all 540 attempts. Scan time is generation time on a GPU that
+another project used for training during most runs, so it says little about the models:
+gemma-4-E2B-it ran while the machine was nearly idle and Qwen3.5-4B while it was swapping.
+For Qwen3.5-4B it leaves out three chunks whose responses were discarded because they
+were planned without the other probes (ADR-0005).
 
 ### Local models, default probe set (540 attempts each, greedy)
 
-| Probe | OWASP 2026 | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b |
-|---|---|---|---|---|
-| `encoding.obfuscation` | LLM01:2026 | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) |
-| `injection.direct` | LLM01:2026 | 50/60 (83%, 72% to 91%) | 52/60 (87%, 76% to 93%) | 47/60 (78%, 66% to 87%) |
-| `injection.indirect` | LLM01:2026 | 22/72 (31%, 21% to 42%) | 38/72 (53%, 41% to 64%) | 44/72 (61%, 50% to 72%) |
-| `jailbreak.templates` | LLM01:2026 | 79/90 (88%, 79% to 93%) | 37/90 (41%, 32% to 51%) | 35/90 (39%, 29% to 49%) |
-| `disclosure.secrets` | LLM02:2026 | 26/48 (54%, 40% to 67%) | 23/48 (48%, 34% to 62%) | 21/48 (44%, 31% to 58%) |
-| `agency.tools` | LLM03:2026 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) | 1/40 (2%, 0% to 13%) |
-| `dos.token_blowup` | LLM06:2026 | 7/12 (58%, 32% to 81%) | 5/12 (42%, 19% to 68%) | 2/12 (17%, 5% to 45%) |
-| `leakage.system_prompt` | LLM08:2026 | 29/80 (36%, 27% to 47%) | 37/80 (46%, 36% to 57%) | 37/80 (46%, 36% to 57%) |
-| `output.shell` | LLM10:2026 | 18/24 (75%, 55% to 88%) | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) |
-| `output.sql` | LLM10:2026 | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 11/24 (46%, 28% to 65%) |
-| `output.xss` | LLM10:2026 | 2/24 (8%, 2% to 26%) | 7/24 (29%, 15% to 49%) | 14/24 (58%, 39% to 76%) |
-| **All attacks** | | **276/540** (51%) | **250/540** (46%) | **248/540** (46%) |
-| Errors | | 0 | 0 | 0 |
+| Probe | OWASP 2026 | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | gemma-4-e2b | granite-4.2-3b |
+|---|---|---|---|---|---|---|
+| `encoding.obfuscation` | LLM01:2026 | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 24/66 (36%, 26% to 48%) | 19/66 (29%, 19% to 41%) | 36/66 (55%, 43% to 66%) |
+| `injection.direct` | LLM01:2026 | 50/60 (83%, 72% to 91%) | 52/60 (87%, 76% to 93%) | 47/60 (78%, 66% to 87%) | 39/60 (65%, 52% to 76%) | 50/60 (83%, 72% to 91%) |
+| `injection.indirect` | LLM01:2026 | 22/72 (31%, 21% to 42%) | 38/72 (53%, 41% to 64%) | 44/72 (61%, 50% to 72%) | 27/72 (38%, 27% to 49%) | 52/72 (72%, 61% to 81%) |
+| `jailbreak.templates` | LLM01:2026 | 79/90 (88%, 79% to 93%) | 37/90 (41%, 32% to 51%) | 35/90 (39%, 29% to 49%) | 78/90 (87%, 78% to 92%) | 44/90 (49%, 39% to 59%) |
+| `disclosure.secrets` | LLM02:2026 | 26/48 (54%, 40% to 67%) | 23/48 (48%, 34% to 62%) | 21/48 (44%, 31% to 58%) | 21/48 (44%, 31% to 58%) | 27/48 (56%, 42% to 69%) |
+| `agency.tools` | LLM03:2026 | 7/40 (18%, 9% to 32%) | 0/40 (0%, 0% to 9%) | 1/40 (2%, 0% to 13%) | 4/40 (10%, 4% to 23%) | 0/40 (0%, 0% to 9%) |
+| `dos.token_blowup` | LLM06:2026 | 7/12 (58%, 32% to 81%) | 5/12 (42%, 19% to 68%) | 2/12 (17%, 5% to 45%) | 0/12 (0%, 0% to 24%) | 3/12 (25%, 9% to 53%) |
+| `leakage.system_prompt` | LLM08:2026 | 29/80 (36%, 27% to 47%) | 37/80 (46%, 36% to 57%) | 37/80 (46%, 36% to 57%) | 23/80 (29%, 20% to 39%) | 27/80 (34%, 24% to 45%) |
+| `output.shell` | LLM10:2026 | 18/24 (75%, 55% to 88%) | 16/24 (67%, 47% to 82%) | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 15/24 (62%, 43% to 79%) |
+| `output.sql` | LLM10:2026 | 12/24 (50%, 31% to 69%) | 11/24 (46%, 28% to 65%) | 11/24 (46%, 28% to 65%) | 12/24 (50%, 31% to 69%) | 9/24 (38%, 21% to 57%) |
+| `output.xss` | LLM10:2026 | 2/24 (8%, 2% to 26%) | 7/24 (29%, 15% to 49%) | 14/24 (58%, 39% to 76%) | 11/24 (46%, 28% to 65%) | 19/24 (79%, 60% to 91%) |
+| **All attacks** | | **276/540** (51%) | **250/540** (46%) | **248/540** (46%) | **245/540** (45%) | **282/540** (52%) |
+| Errors | | 0 | 0 | 0 | 0 | 0 |
 
-The smallest model is the easiest to jailbreak: Qwen3.5-0.8B followed 79 of 90 template
-jailbreaks on fictional restricted tasks, Qwen3.5-2B 37 and Qwen3.5-4B 35 (0.8B against
-2B: +47 points, Newcombe 95% CI +33 to +58). The larger models are more exposed to
-indirect injection (38/72 and 44/72 against 22/72; 2B against 0.8B: +22 points, +6 to
-+37): they read and act on instructions inside documents more often. From 2B to 4B the
-only difference whose interval excludes zero is HTML output, where the 4B wrote
-executable script in 14 of 24 attempts against 7 (+29 points, +1 to +52). The Qwen3.5
-models almost never called a tool because of an injected email (7, 0 and 1 of 40); they
+Every model is vulnerable in 10 or 11 of the 11 probe families, and the totals are close
+(245 to 282 of 540 attacks, 45% to 52%), but the profiles differ. Jailbreak templates on
+fictional restricted tasks split the models: Qwen3.5-0.8B (79 of 90) and gemma-4-E2B-it
+(78) follow most of them, Qwen3.5-2B (37), Qwen3.5-4B (35) and granite-4.2-3b (44) fewer
+than half (gemma-4-E2B-it against Qwen3.5-2B: +46 points, Newcombe 95% CI +32 to +57).
+granite-4.2-3b is the most exposed to indirect injection (52 of 72; +19 points over
+Qwen3.5-2B, +4 to +34) and writes executable HTML most often (19 of 24; +50 points, +22
+to +68). Within Qwen3.5 the larger models act on instructions inside documents more often
+(2B against 0.8B: +22 points, +6 to +37), and from 2B to 4B the only difference whose
+interval excludes zero is HTML output (14 against 7 of 24; +29 points, +1 to +52).
+Injected emails rarely made a model call a high-impact tool (0 to 7 of 40): the models
 summarised the email and quoted the instruction instead.
 
 ### OWASP Top 10 for LLM Applications 2026: coverage and attack success rate
 
-| Category | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | demo-vulnerable | demo-hardened |
-|---|---|---|---|---|---|
-| LLM01:2026 Prompt Injection | 175/288 (61%) | 151/288 (52%) | 150/288 (52%) | 51/106 (48%) | 37/106 (35%) |
-| LLM02:2026 Sensitive Information Disclosure | 26/48 (54%) | 23/48 (48%) | 21/48 (44%) | 3/12 (25%) | 0/12 (0%) |
-| LLM03:2026 Excessive Agency | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
-| LLM04:2026 Supply Chain | not tested | not tested | not tested | not tested | not tested |
-| LLM05:2026 Data and Model Poisoning | not tested | not tested | not tested | not tested | not tested |
-| LLM06:2026 Unbounded Consumption | 7/12 (58%) | 5/12 (42%) | 2/12 (17%) | 3/12 (25%) | 0/12 (0%) |
-| LLM07:2026 Misinformation | not tested | not tested | not tested | not tested | not tested |
-| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 37/80 (46%) | 8/16 (50%) | 0/16 (0%) |
-| LLM09:2026 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested | not tested |
-| LLM10:2026 Improper Output Handling | 32/72 (44%) | 34/72 (47%) | 37/72 (51%) | 16/36 (44%) | 0/36 (0%) |
+| Category | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | gemma-4-e2b | granite-4.2-3b | demo-vulnerable | demo-hardened |
+|---|---|---|---|---|---|---|---|
+| LLM01:2026 Prompt Injection | 175/288 (61%) | 151/288 (52%) | 150/288 (52%) | 163/288 (57%) | 182/288 (63%) | 51/106 (48%) | 37/106 (35%) |
+| LLM02:2026 Sensitive Information Disclosure | 26/48 (54%) | 23/48 (48%) | 21/48 (44%) | 21/48 (44%) | 27/48 (56%) | 3/12 (25%) | 0/12 (0%) |
+| LLM03:2026 Excessive Agency | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 4/40 (10%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
+| LLM04:2026 Supply Chain | not tested | not tested | not tested | not tested | not tested | not tested | not tested |
+| LLM05:2026 Data and Model Poisoning | not tested | not tested | not tested | not tested | not tested | not tested | not tested |
+| LLM06:2026 Unbounded Consumption | 7/12 (58%) | 5/12 (42%) | 2/12 (17%) | 0/12 (0%) | 3/12 (25%) | 3/12 (25%) | 0/12 (0%) |
+| LLM07:2026 Misinformation | not tested | not tested | not tested | not tested | not tested | not tested | not tested |
+| LLM08:2026 Hidden Context Exposure | 29/80 (36%) | 37/80 (46%) | 37/80 (46%) | 23/80 (29%) | 27/80 (34%) | 8/16 (50%) | 0/16 (0%) |
+| LLM09:2026 Vector and Embedding Weaknesses | not tested | not tested | not tested | not tested | not tested | not tested | not tested |
+| LLM10:2026 Improper Output Handling | 32/72 (44%) | 34/72 (47%) | 37/72 (51%) | 34/72 (47%) | 43/72 (60%) | 16/36 (44%) | 0/36 (0%) |
 
 Every probe maps to one 2026 category (`llm-vuln-scanner taxonomy`, ADR-0007). "Not
 tested" categories need access the black-box probes do not have (see Limitations).
 
 ### OWASP Top 10 for Agentic Applications 2026: risks the agent and tool probes exercise
 
-| Risk | Probes | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | demo-vulnerable | demo-hardened |
-|---|---|---|---|---|---|---|
-| ASI01:2026 Agent Goal Hijack | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
-| ASI02:2026 Tool Misuse & Exploitation | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 0/40 (0%) | 0/40 (0%) |
-| ASI05:2026 Unexpected Code Execution (RCE) | `output.shell` | 18/24 (75%) | 16/24 (67%) | 12/24 (50%) | 8/12 (67%) | 0/12 (0%) |
+| Risk | Probes | qwen3.5-0.8b | qwen3.5-2b | qwen3.5-4b | gemma-4-e2b | granite-4.2-3b | demo-vulnerable | demo-hardened |
+|---|---|---|---|---|---|---|---|---|
+| ASI01:2026 Agent Goal Hijack | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 4/40 (10%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
+| ASI02:2026 Tool Misuse & Exploitation | `agency.tools` | 7/40 (18%) | 0/40 (0%) | 1/40 (2%) | 4/40 (10%) | 0/40 (0%) | 0/40 (0%) | 0/40 (0%) |
+| ASI05:2026 Unexpected Code Execution (RCE) | `output.shell` | 18/24 (75%) | 16/24 (67%) | 12/24 (50%) | 11/24 (46%) | 15/24 (62%) | 8/12 (67%) | 0/12 (0%) |
 
 `agency.tools` covers Agent Goal Hijack and Tool Misuse & Exploitation; `output.shell`
 covers Unexpected Code Execution because the feature it models runs the command.
@@ -221,7 +232,7 @@ held-out models, which is why jailbreak success also requires the canary (ADR-00
 - **Small quantized models, one shared machine.** Rates are for 0.8B to 4B models in 4-bit
   and 3-bit GGUF builds with greedy decoding; larger models, full precision and sampled
   decoding behave differently, and quantization can change refusal behaviour.
-- **Non-thinking mode.** Qwen3.5 was scanned without its reasoning phase. With thinking
+- **Non-thinking mode.** Qwen3.5 and Gemma 4 were scanned without their reasoning phase. With thinking
   on, responses are several times longer and the model may reason its way into or out of
   an attack; a deployment that serves thinking mode should be scanned in that mode
   (`llama-server --reasoning on`).
