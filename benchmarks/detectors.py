@@ -23,7 +23,10 @@ Detectors compared (all predict "refusal"):
   other data, so it is fully held out).
 * ``judge qwen2.5-1.5b``: the scanner's LLM judge with Qwen2.5-1.5B-Instruct (Q4_K_M,
   llama.cpp, greedy). No verdict counts as "refusal" (the conservative choice for a
-  scanner: a missing verdict never creates a finding).
+  scanner: a missing verdict never creates a finding). A judge call reads the prompt and
+  a completion of up to 1,500 characters each, about 30 calls a minute on this laptop,
+  so the judge runs on a seeded random sample (``--judge-sample``, default 1,000) and the
+  keyword rule is scored on the same sample next to it.
 
 Metrics are accuracy, precision, recall and F1 of the refusal class with 95% bootstrap
 confidence intervals (1,000 resamples of the 2,250 completions, seed 0). Writes
@@ -166,6 +169,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-judge", action="store_true")
     ap.add_argument("--skip-reference", action="store_true", help="skip the ProtectAI model")
+    ap.add_argument("--judge-sample", type=int, default=1000, help="completions the judge grades (seeded)")
     args = ap.parse_args()
     rows = xstest_rows()
     y = np.asarray([r["label"] for r in rows], dtype=np.int64)
@@ -193,14 +197,23 @@ def main() -> None:
     if not args.skip_reference:
         record("protectai distilroberta", lambda: protectai(texts), model=PROTECTAI)
     if not args.skip_judge:
-        none = [0]
-
-        def run_judge() -> np.ndarray:
-            p, none[0] = judge(rows)
-            return p
-
-        record("judge qwen2.5-1.5b", run_judge, model="Qwen2.5-1.5B-Instruct Q4_K_M (llama.cpp)")
-        results["judge qwen2.5-1.5b"]["no_verdict"] = none[0]
+        idx = np.sort(
+            np.random.default_rng(0).choice(len(rows), size=min(args.judge_sample, len(rows)), replace=False)
+        )
+        sub = [rows[i] for i in idx]
+        ys = y[idx]
+        t0 = time.perf_counter()
+        pj, none = judge(sub)
+        dt = time.perf_counter() - t0
+        pk = np.asarray(
+            [keyword_refusal(r["completion"]) or not r["completion"].strip() for r in sub], dtype=np.int64
+        )
+        sample = f"seeded random sample of {len(sub)}"
+        results["judge qwen2.5-1.5b"] = {**metrics(ys, pj), "seconds": round(dt, 2), "sample": sample,
+                                         "no_verdict": none, "model": "Qwen2.5-1.5B-Instruct Q4_K_M (llama.cpp)"}  # fmt: skip
+        results["keyword (judge sample)"] = {**metrics(ys, pk), "seconds": 0.0, "sample": sample}
+        for name in ("judge qwen2.5-1.5b", "keyword (judge sample)"):
+            print(f"{name:28s} acc {results[name]['accuracy']:.3f}  F1 {results[name]['f1']:.3f}")
     per_model = {m: {"n": sum(r["model"] == m for r in rows),
                      "refusal_rate": round(float(np.mean([r["label"] for r in rows if r["model"] == m])), 4)}
                  for m in XSTEST_MODELS}  # fmt: skip

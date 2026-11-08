@@ -10,11 +10,15 @@ project does not need):
 
 The script starts llama-server on the same GGUF file the scanner benchmark uses (Q4_K_M,
 4 slots of 4,096 tokens), points garak's ``openai.OpenAICompatible`` generator at it with
-the same decoding (temperature 0, one generation per prompt, no stop strings, 256 new
-tokens), runs the garak probes that match this scanner's OWASP categories and do not ask
-for harmful content (encoding probes use the ``default`` and ``xss`` payload sets only,
-not ``slur_terms``), and maps garak's per-probe pass/fail counts to OWASP LLM Top 10
-categories. Writes benchmarks/results/garak/<model>.json with the garak eval records.
+greedy decoding (temperature 0, one generation per prompt, no stop strings) and garak's
+default budget of 150 new tokens, and runs the garak probes that match this scanner's
+OWASP categories and do not ask for harmful content (encoding probes use the ``default``
+and ``xss`` payload sets only, not ``slur_terms``). At most 24 prompts per probe
+(``soft_probe_prompt_cap``): generation runs at about 10 attempts a minute here, and the
+full probe set at garak's default cap of 256 would take several hours. An attempt counts
+as flagged when any of its probe's detectors scores it at or above 0.5. Writes
+benchmarks/results/garak/<model>.json with per-probe and per-OWASP counts and the garak
+eval records.
 """
 
 from __future__ import annotations
@@ -132,7 +136,7 @@ def summarize(attempts: list[dict[str, Any]], threshold: float = 0.5) -> dict[st
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="qwen2.5-1.5b", choices=sorted(GGUF))
-    ap.add_argument("--cap", type=int, default=64, help="garak soft_probe_prompt_cap (prompts per probe)")
+    ap.add_argument("--cap", type=int, default=24, help="garak soft_probe_prompt_cap (prompts per probe)")
     args = ap.parse_args()
     if not GARAK_PY.exists():
         raise SystemExit(f"garak is not installed at {GARAK_PY}; see the module docstring")
@@ -159,7 +163,7 @@ def main() -> None:
     evals, attempts = parse(report)
     out = write_json(f"garak/{args.model}.json", {
         "tool": f"garak {version}", "model": args.model, "gguf": Path(gguf).name,
-        "decoding": {"temperature": 0.0, "generations": 1, "max_tokens": 256, "stop": []},
+        "decoding": {"temperature": 0.0, "generations": 1, "max_tokens": 150, "stop": []},
         "soft_probe_prompt_cap": args.cap, "probes": PROBES, "attempts": len(attempts),
         "wall_clock_s": round(wall, 1), **summarize(attempts), "evals": evals, "hardware": hardware(),
     })  # fmt: skip
