@@ -16,6 +16,22 @@
 
 > **Evidence level: reference validated.** Probe campaigns against local open-weight models with garak as the reference tool; the targets are the scanner's own demo applications. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
+## In plain English
+
+This tool attacks an AI application the way a hacker would, then reports which attacks
+worked. It follows the OWASP list of top risks for AI applications.
+
+- **It ran 540 attacks against each of five small open models.** The plain "ignore your
+  instructions" attack worked 65% to 87% of the time.
+- **It was compared with garak, NVIDIA's scanner,** on the same model. Both tools agree the
+  model follows injected instructions. This tool also tests two risk types that the matching
+  garak probes do not.
+- **It finished sooner.** 540 attempts in 55 minutes, against 714 attempts in 117 minutes
+  for garak.
+
+**Where it falls short:** the targets are small local models and the scanner's own demo
+apps. It has not been run against a commercial AI product.
+
 ## Motivation
 
 An LLM feature is a new attack surface: untrusted text steers a model that can see secrets,
