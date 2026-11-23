@@ -14,6 +14,8 @@
 
 ---
 
+> **Evidence level: reference validated.** Probe campaigns against local open-weight models with garak as the reference tool; the targets are the scanner's own demo applications. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+
 ## Motivation
 
 An LLM feature is a new attack surface: untrusted text steers a model that can see secrets,
