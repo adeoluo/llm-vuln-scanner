@@ -16,7 +16,7 @@
 
 > **Evidence level: reference validated.** Probe campaigns against local open-weight models with garak as the reference tool; the targets are the scanner's own demo applications. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
-## Summary
+## Highlights
 
 This tool attacks an AI application the way a hacker would, then reports which attacks
 worked. It follows the OWASP list of top risks for AI applications.
