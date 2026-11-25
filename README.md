@@ -14,7 +14,7 @@
 
 ---
 
-> **Evidence level: reference validated.** The scanner ran its attack sets against small open-weight models (models whose weights are public) on a local machine and against its own demo application. garak, an existing open-source scanner, served as the reference tool for comparison. Nobody else has reproduced these results, and the scanner is not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+> **Evidence level: reference validated.** The scanner ran its attack sets against small open-weight models (models whose weights are public) on a local machine and against its own demo application. garak, an existing open-source scanner, served as the reference tool for comparison. Nobody else has reproduced these results, and the scanner is not used in production.
 
 ## Highlights
 
